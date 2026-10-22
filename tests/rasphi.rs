@@ -3,3 +3,4 @@
 mod links_share;
 mod review_pr_comment;
 mod reviewer_hook_dirs;
+mod trust_write;

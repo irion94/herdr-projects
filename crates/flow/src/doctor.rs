@@ -14,6 +14,7 @@ pub mod program;
 pub mod queue;
 pub mod settings;
 pub mod stale;
+pub mod trust;
 
 /// One thing the check found.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -65,6 +66,7 @@ pub fn doctor_main() -> i32 {
         all.extend(plugin::check(&herdr));
         all.extend(agents::check(&progs.join().unwrap_or_default()));
         all.extend(codex::check());
+        all.extend(trust::check());
         all.extend(set.join().unwrap_or_default());
         if let Ok(m) = mount.join() { all.extend(plan::check(&m)); }
         all.extend(machines::check(far.join().unwrap_or_default().as_ref()));
