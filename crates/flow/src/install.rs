@@ -5,7 +5,7 @@ use crate::err::Res;
 use crate::store::files::{bin, write_atomic, VERSION};
 use std::path::{Path, PathBuf};
 
-pub const REPO: &str = "eliasstravik/herdr-projects";
+pub const REPO: &str = "irion94/herdr-projects";
 
 /// The release files' name for a platform, from `uname -s`/`uname -m` or Rust's own names. None: no release is made.
 pub fn platform_of(os: &str, arch: &str) -> Option<(&'static str, &'static str)> {
