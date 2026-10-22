@@ -45,7 +45,7 @@ pub(super) fn fail(g: &mut Guard, title: &str, detail: &str, next: &str, f: Fail
 pub(super) fn no_fix() -> Fail { Fail { agent_can_fix: false, auth: Some(false), keep_intent: false } }
 /// `head`: the commit that was merged. Nothing newer on the branch is taken for merged. `commit`: the commit it made on
 /// the branch it landed on, what a task that waited for it is told (after/handed.rs).
-fn landed(id: &str, g: &mut Guard, t: &Task, msg: &str, head: &str, commit: &str) -> Res<()> {
+pub(super) fn landed(id: &str, g: &mut Guard, t: &Task, msg: &str, head: &str, commit: &str) -> Res<()> {
     let mark = flow::spaces::tidy_mark(t, "always", head);
     // The issues its work closes (`merge.closes`), only once something landed.
     let closed = if head.is_empty() && commit.is_empty() { String::new() } else { super::closes::after_landing(t, &folder_of(t.s("id")), commit) };
@@ -112,11 +112,13 @@ pub fn land_core(id: &str, g: &mut Guard) -> Res<()> {
     let root = folder_of(t.s("id"));
     let tree = sync::tree_of(&t);
     let how = setting_text("merge.method", Some(&t)); // read right before the merge. squash by default
-    if let Some(b) = sync::named_base(&root, &t) { if !onto_named(id, g, &t, &root, &tree, &b)? { return Ok(()); } }
+    // `workspace.push branch` (fork): a push onto the branch it started from, no pull request (push_branch.rs).
+    let pushed_onto = if super::push_branch::lands_on_base(&t) && !tree.is_empty() { let Some(b) = super::push_branch::target(g, &root, &t)? else { return Ok(()) }; Some(b) } else { None };
+    if let Some(b) = sync::named_base(&root, &t).filter(|_| pushed_onto.is_none()) { if !onto_named(id, g, &t, &root, &tree, &b)? { return Ok(()); } }
     if !tree.is_empty() {
         let tp = Path::new(&tree);
         let pre = (|| -> Res<Option<&'static str>> {
-            if !t.b("pr") && !flow::git::dirty(&root).is_empty() { fail(g, "Merge needs a clean checkout", &format!("Checkout: {}\n{}", root.display(), flow::git::dirty(&root)), "Commit, stash or move your own unsaved files, then approve again. The agent must not alter your checkout.", no_fix())?; return Ok(Some("done")); }
+            if !t.b("pr") && pushed_onto.is_none() && !flow::git::dirty(&root).is_empty() { fail(g, "Merge needs a clean checkout", &format!("Checkout: {}\n{}", root.display(), flow::git::dirty(&root)), "Commit, stash or move your own unsaved files, then approve again. The agent must not alter your checkout.", no_fix())?; return Ok(Some("done")); }
             if git_out(tp, &["symbolic-ref", "--short", "HEAD"])? != t.s("branch") { fail(g, "Task is on the wrong branch", &tree, "Restore the task's own branch before retrying.", no_fix())?; return Ok(Some("done")); }
             // Approve refuses unless the worktree is clean and its HEAD is exactly the commit that was checked and reviewed.
             let vh = t.at("mergeIntent").t("verifiedHead");
@@ -148,6 +150,7 @@ pub fn land_core(id: &str, g: &mut Guard) -> Res<()> {
         }
     }
     t = g.check()?;
+    if let Some(b) = &pushed_onto { return super::push_branch::land(id, g, &t, &tree, b); }
     if t.b("pr") {
         // By number, not link: gh then uses the repo's own remote for the host.
         let pr = pr_number(t.s("pr"));

@@ -9,6 +9,7 @@ pub mod closes;
 pub mod expected;
 pub mod in_use;
 pub mod merge;
+pub mod push_branch;
 pub mod readable;
 pub mod triggers;
 pub use cleanup::{cleanup, cleanup_job, cleanup_with, tidy, Cleanup};

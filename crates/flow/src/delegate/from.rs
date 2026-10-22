@@ -40,20 +40,25 @@ fn main_ref(root: &Path, from: &str) -> String {
 /// off): that lands on your checkout's branch, which is not the one named.
 pub fn base_ref(root: &Path, t: &Obj) -> Res<String> {
     let from = setting_text("workspace.from", Some(t));
-    let Some(b) = named(&from) else { return Ok(main_ref(root, &from)) };
-    if setting("merge.pr", Some(t)) != json!(true) && setting("research.only", Some(t)) != json!(true) {
+    let push = crate::land::push_branch::lands_on_base(t);
+    let Some(b) = named(&from) else {
+        if push { crate::refuse!("{}: it is {from}. Set workspace.from to the branch at the remote the work lands on (herdr-projects set workspace.from <branch>), or workspace.push to own.", crate::land::push_branch::NEEDS_FROM); }
+        return Ok(main_ref(root, &from));
+    };
+    // `workspace.push branch` lands by a push onto the branch, not by a local merge: merge.pr does not matter then.
+    if !push && setting("merge.pr", Some(t)) != json!(true) && setting("research.only", Some(t)) != json!(true) {
         crate::refuse!("workspace.from is {b}, and merge.pr is off: a local merge lands on the branch your checkout is on, not on {b}, so a task cannot start from a named branch without a pull request yet. Turn merge.pr on (herdr-projects set merge.pr true), or set workspace.from to main or here.");
     }
     if !has_origin(root) { crate::refuse!("workspace.from is {b}, a branch at the remote, and this repo has no remote named origin. Add the remote, or set workspace.from to main or here."); }
     let spec = format!("+refs/heads/{b}:refs/remotes/origin/{b}");
     let ran = fetch::with_repo_lock(root, || Ok(quiet_git(root, &["fetch", "--no-tags", "origin", &spec]).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().map_err(|e| e.to_string())
         .and_then(|c| crate::herdr::cli::wait_with_timeout(c, FETCH_MS).map_err(|e| if e.code == "timeout" { format!("origin did not answer within {} seconds", FETCH_MS / 1000) } else { e.message })))).unwrap_or_else(|e| Err(e.msg));
-    let said = match ran { Ok(r) if r.status == 0 => return Ok(format!("origin/{b}")), Ok(r) => r.stderr.trim().to_string(), Err(e) => e };
+    let said = match ran { Ok(r) if r.status == 0 => return crate::land::push_branch::not_main(root, b, push).map(|_| format!("origin/{b}")), Ok(r) => r.stderr.trim().to_string(), Err(e) => e };
     if said.to_lowercase().contains("couldn't find remote ref") {
         crate::refuse!("origin has no branch {b} (workspace.from), so the task cannot start from it. Push {b} first, or set workspace.from to a branch origin has (git ls-remote --heads origin lists them), main or here.");
     }
     // Origin cannot be reached now: the copy of the branch it last gave is where the work starts.
-    if git_out(root, &["rev-parse", "--verify", "-q", &format!("refs/remotes/origin/{b}")]).is_ok() { return Ok(format!("origin/{b}")); }
+    if git_out(root, &["rev-parse", "--verify", "-q", &format!("refs/remotes/origin/{b}")]).is_ok() { return crate::land::push_branch::not_main(root, b, push).map(|_| format!("origin/{b}")); }
     crate::refuse!("Could not fetch {b} (workspace.from) from origin, and it was never fetched here: {said}. Make sure origin can be reached without a password (git fetch origin {b}), then delegate again.")
 }
 /// A start refused before anything was made: the task waits, failed, with the reason and what to do.

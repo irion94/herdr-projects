@@ -174,7 +174,8 @@ pub fn pipeline(id: &str, g: &mut Guard, text: &str, keep_intent: bool, reason: 
     if let Some(w) = &why { note = format!("{note} {w}."); }
     // A task that has a pull request pushes to it also with `merge.pr` turned off since: it merges through that pull
     // request, at the commit checked here, so what was merged in after its review must be on it (#307).
-    if !tree.is_empty() && (ch.b("merge.pr") || t.b("pr")) && !research && why.is_none() {
+    // `workspace.push branch` (fork): nothing is pushed and no pull request opened here; it lands by one push (land/push_branch.rs).
+    if !tree.is_empty() && (ch.b("merge.pr") || t.b("pr")) && !research && why.is_none() && !crate::land::push_branch::lands_on_base(&t) {
         let tp = Path::new(&tree);
         let base = [t.s("baseSha"), t.s("from")].into_iter().find(|s| !s.is_empty()).unwrap_or("HEAD").to_string();
         let pushed = (|| -> Res<Option<String>> {
