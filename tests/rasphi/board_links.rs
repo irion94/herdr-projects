@@ -1,4 +1,4 @@
-//! links.share: how review links are shared. `auto` is upstream's (the tailnet when tailscale is on PATH, else
+//! board.links: how review links are shared. `auto` is upstream's (the tailnet when tailscale is on PATH, else
 //! 127.0.0.1), `tailscale` always the tailnet, `local` always 127.0.0.1; HERDR_PROJECTS_LINKS=local still wins. Read on
 //! every call (the runner is long-lived), and a tailscale that hangs is given up after its timeout.
 use crate::common::*;
@@ -28,8 +28,8 @@ fn path_with(dir: &Path, body: Option<&str>) -> OldPath {
 fn run(argv: &[&str]) -> String { let a = sw::cli::flags::parse(&argv.iter().map(|s| s.to_string()).collect::<Vec<_>>()); sw::cli::tasks::command(&a.pos[0], &a).map(|(_, s)| s).unwrap_or_else(|e| panic!("{argv:?}: {}", e.msg)) }
 
 #[test]
-fn links_share_is_a_board_choice_built_in_auto() {
-    let e = sw::store::settings_list::entry_of("links.share").expect("links.share is a setting");
+fn board_links_is_a_board_choice_built_in_auto() {
+    let e = sw::store::settings_list::entry_of("board.links").expect("board.links is a setting");
     assert_eq!((e.kind.name(), e.builtin.clone()), ("board", json!("auto")));
     assert_eq!(e.values, vec!["auto", "tailscale", "local"]);
 }
@@ -41,16 +41,16 @@ fn the_setting_decides_the_link_mode_on_every_call() {
     {
         let _p = path_with(&w.base.join("with-ts"), Some("exit 0"));
         assert_eq!(link_mode(), "tailscale", "auto with tailscale installed: upstream's tailnet");
-        run(&["set", "links.share", "local"]);
+        run(&["set", "board.links", "local"]);
         assert_eq!(link_mode(), "local", "read again, not fixed at the first call");
-        run(&["set", "links.share", "tailscale"]);
+        run(&["set", "board.links", "tailscale"]);
         set("HERDR_PROJECTS_LINKS", "local");
         assert_eq!(link_mode(), "local", "the environment's local still wins");
         unsafe { std::env::remove_var("HERDR_PROJECTS_LINKS") }
     }
     let _p = path_with(&w.base.join("no-ts"), None);
     assert_eq!(link_mode(), "tailscale", "tailscale: the tailnet even where PATH lacks it");
-    run(&["set", "links.share", "auto"]);
+    run(&["set", "board.links", "auto"]);
     assert_eq!(link_mode(), "local", "auto without tailscale: 127.0.0.1");
 }
 

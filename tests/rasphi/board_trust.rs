@@ -1,4 +1,4 @@
-//! trust.write: whether the board marks a repo as trusted in Claude's ~/.claude.json before a full-access start.
+//! board.trust: whether the board marks a repo as trusted in Claude's ~/.claude.json before a full-access start.
 //! Built in on, as upstream; off, the file is never touched and `doctor` names each known repo without the mark, to
 //! be pre-trusted by hand.
 use crate::common::*;
@@ -16,8 +16,8 @@ fn started(settings: serde_json::Value) -> World {
 }
 
 #[test]
-fn trust_write_is_a_board_switch_built_in_on() {
-    let e = sw::store::settings_list::entry_of("trust.write").expect("trust.write is a setting");
+fn board_trust_is_a_board_switch_built_in_on() {
+    let e = sw::store::settings_list::entry_of("board.trust").expect("board.trust is a setting");
     assert_eq!((e.kind.name(), e.builtin.clone()), ("board", json!(true)));
 }
 
@@ -32,7 +32,7 @@ fn built_in_a_full_access_start_writes_the_mark_and_doctor_says_nothing() {
 #[test]
 fn off_the_file_stays_byte_identical_and_doctor_names_the_root() {
     let before = "{\n  \"projects\": {},\n  \"someone\": \"else's\"\n}\n";
-    let w = world_with(Opts { repo: true, settings: json!({ "trust.write": false }), ..Default::default() });
+    let w = world_with(Opts { repo: true, settings: json!({ "board.trust": false }), ..Default::default() });
     std::fs::write(w.base.join("claude.json"), before).unwrap();
     w.script(json!({ "worker": [{ "status": "working" }] }));
     let id = w.add("Add a greeting");

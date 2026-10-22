@@ -58,10 +58,10 @@ fn ensure_tailscale(info: &Value) -> Option<String> {
     let _ = write_json(&serve_file(), &Value::Object(all));
     Some(format!("https://{host}:{port}"))
 }
-/// How links are shared (`links.share`, read on every call: the runner is long-lived): `auto` privately on your
+/// How links are shared (`board.links`, read on every call: the runner is long-lived): `auto` privately on your
 /// tailnet when Tailscale is installed here, else 127.0.0.1; `tailscale` the tailnet; `local` 127.0.0.1.
 pub fn link_mode() -> &'static str {
-    let want = crate::store::settings::lookup::setting_text("links.share", None);
+    let want = crate::store::settings::lookup::setting_text("board.links", None);
     if want == "local" || std::env::var("HERDR_PROJECTS_LINKS").as_deref() == Ok("local") { return "local"; }
     if want == "tailscale" { return "tailscale"; }
     let has = std::process::Command::new("sh").args(["-c", "command -v tailscale"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
