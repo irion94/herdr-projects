@@ -9,7 +9,6 @@ use crate::json::*;
 use crate::store::files::{artifacts_dir, bin, data_dir, pid_alive, proc_start, read_json, write_json};
 use crate::store::tasks::Task;
 use std::path::Path;
-use std::sync::OnceLock;
 
 fn serve_file() -> std::path::PathBuf { data_dir().join("serve.json") }
 fn server_alive(info: &Value) -> bool { info.b("pid") && pid_alive(info.i("pid")) && (!info.b("start") || proc_start(info.i("pid")).as_deref() == Some(info.s("start"))) }
@@ -34,9 +33,12 @@ pub fn start_server(prog: &Path) -> Value {
     }
     read_json(&serve_file()).unwrap_or(Value::Null)
 }
-fn tailscale(a: &[&str]) -> Option<String> {
-    let o = std::process::Command::new("tailscale").args(a).stdin(std::process::Stdio::null()).output().ok()?;
-    o.status.success().then(|| String::from_utf8_lossy(&o.stdout).into_owned())
+/// One `tailscale` command: what it printed, or None when it failed or took longer than 10 seconds.
+pub fn tailscale(a: &[&str]) -> Option<String> {
+    use std::process::Stdio;
+    let child = std::process::Command::new("tailscale").args(a).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().ok()?;
+    let r = crate::herdr::cli::wait_with_timeout(child, 10_000).ok()?;
+    (r.status == 0).then_some(r.stdout)
 }
 /// Share the local server on the tailnet, on an https port nothing else uses. Existing shares are never replaced.
 fn ensure_tailscale(info: &Value) -> Option<String> {
@@ -56,13 +58,14 @@ fn ensure_tailscale(info: &Value) -> Option<String> {
     let _ = write_json(&serve_file(), &Value::Object(all));
     Some(format!("https://{host}:{port}"))
 }
-/// How links are shared is fixed: privately on your tailnet when Tailscale is installed here, else 127.0.0.1.
+/// How links are shared (`links.share`, read on every call: the runner is long-lived): `auto` privately on your
+/// tailnet when Tailscale is installed here, else 127.0.0.1; `tailscale` the tailnet; `local` 127.0.0.1.
 pub fn link_mode() -> &'static str {
-    static MODE: OnceLock<&'static str> = OnceLock::new();
-    MODE.get_or_init(|| {
-        let has = std::process::Command::new("sh").args(["-c", "command -v tailscale"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
-        if std::env::var("HERDR_PROJECTS_LINKS").as_deref() == Ok("local") || !has { "local" } else { "tailscale" }
-    })
+    let want = crate::store::settings::lookup::setting_text("links.share", None);
+    if want == "local" || std::env::var("HERDR_PROJECTS_LINKS").as_deref() == Ok("local") { return "local"; }
+    if want == "tailscale" { return "tailscale"; }
+    let has = std::process::Command::new("sh").args(["-c", "command -v tailscale"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
+    if has { "tailscale" } else { "local" }
 }
 /// Where a task's saved artifacts are served from. Falls back to local when Tailscale is absent or sharing fails.
 pub fn artifact_base(id: &str) -> String {
