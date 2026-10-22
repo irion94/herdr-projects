@@ -39,7 +39,14 @@ pub fn hook_args(kind: &str, h: &Hook) -> Res<Option<Vec<String>>> {
                 let plan_cmd = [h.shim.as_str(), "plan-written", "--id", &h.id, "--token", &h.token].iter().map(|s| shq(s)).collect::<Vec<_>>().join(" ");
                 hooks.put("PermissionRequest", json!([{ "matcher": "ExitPlanMode", "hooks": [{ "type": "command", "command": plan_cmd }] }]));
             }
-            write_private(&file, &json!({ "hooks": hooks }).to_string())?;
+            let mut settings = obj(json!({ "hooks": hooks }));
+            // The reviewer writes its verdict and evidence in the task's review folder and reads its plan: both outside
+            // the folder it works in, so they are named here, and `access: auto` asks no question for them.
+            if h.role == "reviewer" {
+                let dirs = [h.dir.join("review"), h.dir.join("artifacts").join("plan")].map(|d| d.display().to_string());
+                settings.put("permissions", json!({ "additionalDirectories": dirs }));
+            }
+            write_private(&file, &Value::Object(settings).to_string())?;
             Ok(Some(vec!["--settings".into(), file.display().to_string()]))
         }
         // Codex runs one `notify` program at each turn end. Given at launch it would replace one the user configured,

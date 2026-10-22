@@ -2,3 +2,4 @@
 //! apart so the patches rebase on upstream tags with one line in tests/main.rs.
 mod links_share;
 mod review_pr_comment;
+mod reviewer_hook_dirs;
