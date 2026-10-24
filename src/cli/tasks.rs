@@ -18,6 +18,8 @@ fn line(t: &Obj, keys: &crate::store::keys::Keys) -> String {
 }
 fn brief(t: &Obj) -> Value {
     let mut o = obj(json!({ "id": t.at("id"), "state": t.at("state"), "kind": t.at("kind"), "app": t.at("shownApp"), "title": t.at("title"), "msg": t.at("note"), "stage": t.at("stage"), "progress": t.at("progress"), "eta": t.at("eta") }));
+    o.put("group", crate::shown::states::group_of(t));
+    if let Some(f) = crate::shown::states::failed_of(t) { o.put("failed", f); }
     if t.b("pr") { o.put("pr", t.at("pr").clone()); }
     if t.b("research") { o.put("research", t.at("research").clone()); }
     if t.b("chatOnly") { o.put("chat", true); }
@@ -127,7 +129,7 @@ pub fn command(cmd: &str, a: &Args) -> Res<(Value, String)> {
         "retry" => said(finish_line::send_error_noted(&need(1, "an id")?, &rest(2))?),
         "fix" => said(finish_line::send_failure(&need(1, "an id")?)?),
         "finish" => said(finish_line::finish_anyway(&need(1, "an id")?)?),
-        "details" => { let mut d = tidy(finish_line::details(&need(1, "an id")?)?); if pilot.is_some() { crate::autopilot::history::with_note(&mut d); } let s = serde_json::to_string_pretty(&d).unwrap_or_default(); (d, s) }
+        "details" => { let mut d = tidy(finish_line::details(&need(1, "an id")?)?); if let Some(r) = board(true).into_iter().find(|t| t.s("id") == d.at("task").s("id")) { d["group"] = json!(crate::shown::states::group_of(&r)); if let Some(f) = crate::shown::states::failed_of(&r) { d["failed"] = json!(f); } } if pilot.is_some() { crate::autopilot::history::with_note(&mut d); } let s = serde_json::to_string_pretty(&d).unwrap_or_default(); (d, s) }
         "pin" => { let t = filing::pin(&need(1, "an id")?)?; (shown_of(t.s("id")), format!("{}: {}", t.s("id"), if t.b("pinned") { "pinned" } else { "unpinned" })) }
         // A round of work is over: every done task of a repo (or of every repo) in one go.
         "archive" if flags.b("done") => {

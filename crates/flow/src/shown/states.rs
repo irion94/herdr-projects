@@ -41,6 +41,10 @@ pub fn reviewer_word(r: &Obj) -> &'static str { if waiting_of(r).is_some() { "re
 pub fn group_of(r: &Obj) -> &'static str {
     if in_review(r) { "ready to approve" } else if needs_you(r) { "needs you" } else if r.s("state") == "working" { "working" } else if r.s("state") == "done" { "done" } else { "to do" }
 }
+/// What went wrong with finished work, for `--json`: the first of merge, sync, pr, review that applies.
+pub fn failed_of(r: &Obj) -> Option<&'static str> {
+    if r.b("mergeFailed") { Some("merge") } else if r.b("syncBlocked") { Some("sync") } else if r.b("prFailure") || r.s("prState") == "failing" { Some("pr") } else if failed_review(r) { Some("review") } else { None }
+}
 /// Where a task stands, in the words of the one list.
 pub fn standing(r: &Obj) -> String {
     let archived = r.b("archivedAt");
