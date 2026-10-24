@@ -7,7 +7,7 @@ You need [Herdr](https://herdr.dev) 0.9.3+ on macOS or Linux, and Claude Code, C
 1. Install:
 
    ```sh
-   herdr plugin install irion94/herdr-projects --ref v1.2.18-rasphi.2
+   herdr plugin install irion94/herdr-projects --ref v1.2.18-rasphi.3
    ```
 
 2. In Herdr, run the action **Open the work board**. Say yes to the key it offers (`prefix+a`).
@@ -20,7 +20,7 @@ Paste this into Claude Code, Codex or pi, running inside Herdr:
 ```text
 Install the herdr-projects plugin for Herdr and set it up for me.
 1. Check `herdr --version` is 0.9.3 or newer, and that git and curl (or wget) exist. Stop and tell me if not.
-2. Run `herdr plugin install irion94/herdr-projects --ref v1.2.18-rasphi.2`.
+2. Run `herdr plugin install irion94/herdr-projects --ref v1.2.18-rasphi.3`.
 3. Find the plugin's folder with `herdr plugin list` and run `sh <that folder>/bin/run.sh install`.
 4. Add ~/.herdr-projects/data/bin to my PATH in my shell's start-up file, so `herdr-projects` works in new shells.
 5. Run `herdr-projects doctor` and fix anything it reports.
