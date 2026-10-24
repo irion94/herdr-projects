@@ -2,6 +2,7 @@
 //! and a flag a command does not know refused with the nearest right one named, and nothing done.
 use crate::common;
 use common::*;
+use serde_json::{json, Value};
 use sw::json::*;
 
 /// The program run in the world's repo: its exit code, what it printed and what it said went wrong.
@@ -74,4 +75,31 @@ fn real_programs_a_flag_a_command_does_not_know_is_refused_with_the_nearest_righ
     assert!(regex::Regex::new(r"\n\* review\.when +never +this task\n").unwrap().is_match(&out(&w, &["show", t.s("id")])));
     assert!(out(&w, &["list", "--archived"]).contains("No tasks"));
     assert!(out(&w, &["list", "--all", "--query", "kept"]).contains("Kept settings"));
+}
+
+/// A task waiting for the one yes, with these extra fields.
+fn awaiting(w: &World, title: &str, extra: Value) -> String {
+    let id = w.add(title);
+    sw::store::tasks::patch(&id, |t| { for (k, v) in [("state", json!("blocked")), ("kind", json!("permission")), ("stage", json!("approval")), ("agent", json!(true))] { t.put(k, v); } for (k, v) in extra.as_object().unwrap() { t.put(k, v.clone()); } }).unwrap();
+    id
+}
+fn both(w: &World, id: &str) -> (Value, Value) {
+    let listed: Value = serde_json::from_str(&out(w, &["list", "--json"])).unwrap();
+    let l = listed.as_array().unwrap().iter().find(|t| t.s("id") == id).cloned().unwrap();
+    (l, serde_json::from_str(&out(w, &["details", id, "--json"])).unwrap())
+}
+
+// group and failed in the JSON of list and details
+#[test]
+fn real_programs_list_and_details_json_carry_group_and_failed_as_the_board_states_them() {
+    let w = world();
+    let ready = awaiting(&w, "Ready", json!({}));
+    let merge = awaiting(&w, "Merge", json!({ "mergeFailed": true }));
+    let review = awaiting(&w, "Review", json!({ "review": { "recommend": false } }));
+    let working = w.add("Working");
+    sw::store::tasks::patch(&working, |t| { t.put("state", "working"); t.put("stage", "working"); t.put("agent", true); }).unwrap();
+    for (id, group, failed) in [(&ready, "ready to approve", None), (&merge, "needs you", Some("merge")), (&review, "needs you", Some("review")), (&working, "working", None)] {
+        let (l, d) = both(&w, id);
+        for r in [&l, &d] { assert_eq!((r.s("group"), r.get("failed").and_then(|f| f.as_str())), (group, failed), "{id}: {r}"); }
+    }
 }
