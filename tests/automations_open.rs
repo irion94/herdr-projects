@@ -73,7 +73,7 @@ fn an_automations_settings_are_the_page_a_task_has_its_own_rows_marked_a_row_cha
     let w = world();
     let a = three(&w).remove(0);
     sw::store::settings::change::set_value("review.rounds", &json!(5), &sw::store::settings::lookup::Scope::you()).unwrap();
-    let mut s = open(&w.root, 64); s.s.side = false;
+    let mut s = open(&w.root, 72); s.s.side = false; // (fork) +8: the Lead's group (lead.*)
     let row_of = |s: &mut Board, name: &str| -> String { let re = regex::Regex::new(&format!(" {}( |$)", regex::escape(name))).unwrap(); s.screen(120).into_iter().find(|l| re.is_match(l)).unwrap_or_default() };
     let names = |s: &Board| -> Vec<String> { sw::board::update::edit::rows(&s.s).iter().map(|x| x.t("name")).collect() };
     let at = |s: &Board| s.s.editing.as_ref().unwrap().at;
@@ -84,7 +84,7 @@ fn an_automations_settings_are_the_page_a_task_has_its_own_rows_marked_a_row_cha
     use sw::store::settings_list::{Kind, SETTINGS};
     let work: Vec<&str> = SETTINGS.iter().filter(|e| e.kind == Kind::Work).map(|e| e.name.as_ref()).collect();
     for name in &work { assert_eq!(!row_of(&mut s, name).is_empty(), names(&s).iter().any(|x| x == name), "{name}"); }
-    assert!(names(&s).len() >= work.len() - 2, "every work setting, but fast mode for a program that has none");
+    assert!(names(&s).len() >= work.len() - 3, "every work setting, but fast mode for a program that has none"); // (fork) lead.fast too
     for e in SETTINGS.iter().filter(|e| e.kind == Kind::Board) { assert_eq!(row_of(&mut s, &e.name), "", "{}", e.name); }
     like(&row_of(&mut s, "worker.agent"), r"^▌› {3}Agent's program +claude +worker\.agent *$");
     like(&row_of(&mut s, "reviewer.agent"), r"^ {3}\* Reviewer's program +claude +reviewer\.agent *$");
