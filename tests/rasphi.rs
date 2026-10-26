@@ -2,6 +2,8 @@
 //! apart so the patches rebase on upstream tags with one line in tests/main.rs.
 mod board_links;
 mod board_trust;
+mod lead_agent;
+mod lead_common;
 mod review_pr_comment;
 mod reviewer_hook_dirs;
 mod workspace_push;

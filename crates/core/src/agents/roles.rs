@@ -9,7 +9,7 @@ pub fn role_of_setting(name: &str) -> &str {
     match name.split('.').next().unwrap_or("") { "attempts" => "worker", r => r }
 }
 fn role_words(role: &str) -> &str {
-    match role { "worker" => "work on a task", "reviewer" => "review", "coordinator" => "be the Coordinator", "plan" => "write a plan", "watcher" => "be the Watcher", r => r }
+    match role { "worker" => "work on a task", "reviewer" => "review", "coordinator" => "be the Coordinator", "plan" => "write a plan", "watcher" => "be the Watcher", "lead" => "be the Lead", r => r }
 }
 /// The programs that can do a role, for a refusal to name.
 pub fn able(role: &str) -> Vec<&'static str> { KIND_NAMES.iter().copied().filter(|k| why_not(k, role, false).is_none()).collect() }
@@ -17,6 +17,8 @@ pub fn able(role: &str) -> Vec<&'static str> { KIND_NAMES.iter().copied().filter
 pub fn why_not(k: &str, role: &str, model: bool) -> Option<String> {
     let a: &Kind = kind(k)?;
     if let Some((_, why)) = a.cannot.iter().find(|(r, _)| *r == role) { return Some(format!("{k} cannot {}: {why}.", role_words(role))); }
+    // (fork) the Lead runs with a deny list of its tools, which the board has for claude only
+    if role == "lead" && super::fence::lead_fence(k).is_none() { return Some(format!("{k} cannot be the Lead: the board starts the Lead with edits and outward actions denied, and has that deny list only for claude.")); }
     if role == "watcher" {
         if !can_one_shot(k) { return Some(format!("{k} has no headless one-shot mode, so it cannot be the Watcher.")); }
         // The three's own one-shot (adapter.rs) takes a model.

@@ -42,7 +42,8 @@ fn role(name: &str, who: &str, agent: &str, kind: Kind) -> Vec<Entry> {
     if name == "coordinator" { agent_doc.push_str(". `none`: no Coordinator"); }
     if name == "reviewer" { agent_doc.push_str(". Not installed here: the worker's program reviews, on its own model, and the task says so"); }
     let mut a = e(&format!("{name}.agent"), &format!("{cap} program"), kind, Ty::Agent, json!(agent), &agent_doc);
-    a.none = name == "coordinator";
+    if name == "lead" { agent_doc.push_str(". `none`: no Lead. Only `claude` for now: the board starts the Lead with its edits and outward actions denied, and has that deny list for no other program. More: [the Lead](lead.md)"); } // (fork)
+    a.none = name == "coordinator" || name == "lead"; // (fork)
     let mut text = e(&format!("{name}.instructions"), &format!("{cap} instructions"), kind, Ty::Text, json!("none"),
         &format!("your own words for {who}, added after the board's own fixed rules{}", match kind { Kind::Work => ". They add up across the places, broadest first, and the agent is told that later ones win", Kind::Coord => ". They add up across the places, broadest first: yours, then this coordinator's own", _ => "" }));
     text.adds = matches!(kind, Kind::Work | Kind::Coord);
@@ -60,6 +61,11 @@ pub static SETTINGS: LazyLock<Vec<Entry>> = LazyLock::new(|| {
     s.extend(role("worker", "the working agent", "claude", Work));
     s.push(e("worker.fallback", "Agent's fallback", Work, Ty::Agents, json!("none"), "who takes over when the working agent cannot go on: a list of agents tried in order (`codex, claude/claude-opus-5-5`; a model after a slash, as in `worker.agent`), or `none`. It takes over in the same worktree, with the task, what was done so far and the open findings, when the agent's provider is down (after the board's own tries), the agent is out of allowance or logged out, or its work still fails the review or the check after `review.rounds` rounds. With the list used up the task waits for you. Nobody extra runs until then. More: [the fallback agent](fallback.md)"));
     s.extend(role("reviewer", "the reviewer", "codex", Work));
+    // (fork) the Lead: an agent that decides the waits of a task before they reach you (docs/lead.md)
+    s.extend(role("lead", "the Lead", "none", Work));
+    s.push(e("lead.tries", "Lead's tries", Work, Ty::Count, json!(2), "how many times the Lead may act (answer, plan-ok, round) on one class of wait (question, plan, review, check, finish, quiet) in the whole life of one task; the next wait of that class goes to you by itself. Counted per task and class, never reset. `0`: every wait goes to you. More: [the Lead](lead.md)").min(0));
+    s.push(e("lead.timeout", "Lead may decide for", Work, Ty::Time, json!("15m"), "how long the Lead may take on one wake; reached, the wait goes to you with \"did not decide in 15m\". More: [the Lead](lead.md)"));
+    s.push(e("lead.quiet", "Lead wakes after quiet", Work, Ty::Time, json!("none"), "wake the Lead when the working agent has been at it this long without a turn end or a report (`40m`), once per quiet stretch, so a stuck verification is time-boxed. `none`: only waits wake it. More: [the Lead](lead.md)").none());
     s.push(e("reviewer.fallback", "Reviewer's fallback", Work, Ty::Agents, json!("none"), "who takes over when the reviewer cannot go on: a list of agents tried in order (`codex, claude/claude-opus-5-5`; a model after a slash, as in `reviewer.agent`), or `none`. It reviews in its place when the reviewer's provider is down (after the board's own tries), the reviewer is out of allowance or logged out, or its program is not installed here; it then reviews the later rounds of that task too. With the list used up the review fails as before. Nobody extra runs until then. More: [the fallback agent](fallback.md)"));
     s.extend(role("coordinator", "the Coordinator, the agent you talk to in the chat", "claude", Coord));
     // a coordinator on autopilot (crates/flow/src/autopilot/, docs/autopilot.md): this time -> this coordinator -> you -> built in
