@@ -85,10 +85,6 @@ pub fn close_lead(id: &str) {
     flow::tabs::close_reviewer_tab(&flow::task::h(&t), t.at("link").at("lead"));
     let _ = update_wait(id, 10000, |t| { if t.at("link").is_object() { t.obj_mut("link").del("lead"); } Ok(Change::Write) });
 }
-/// The housekeeping's part: the Lead of every task of this herdr session that has ended is closed.
-pub fn close_ended(tasks: &[Obj], socket: &str) {
-    for t in tasks { if t.at("link").s("socket") == socket && t.at("link").at("lead").is_object() && ended(t) { close_lead(t.s("id")); } }
-}
 /// The Lead's own turn-end report: counted on the task, nothing else. Never an event, so the finish runner never
 /// takes it for the working agent's turn end.
 pub fn turn_ended(id: &str) {

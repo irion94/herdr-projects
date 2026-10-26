@@ -9,6 +9,7 @@ use crate::store::tasks::{update, Change};
 
 /// What happened, from where the task stands; "" for a task nobody needs to hear about.
 pub fn event_of(t: &Obj) -> &'static str {
+    if crate::lead::wake::held(t) { return ""; } // (fork) the Lead decides first
     if t.b("archivedAt") { return ""; }
     let st = t.s("stage");
     if ["asks", "reviewneeds", "plan", "pick"].contains(&st) || (st == "stopped" && t.b("limitStop")) || (st == "after" && t.b("afterBlocked")) { return "needs you"; }

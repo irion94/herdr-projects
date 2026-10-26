@@ -48,6 +48,7 @@ pub fn failed_of(r: &Obj) -> Option<&'static str> {
 /// Where a task stands, in the words of the one list.
 pub fn standing(r: &Obj) -> String {
     let archived = r.b("archivedAt");
+    if crate::lead::wake::held(r) { return words::LEAD_DECIDES.into(); } // (fork) the Lead decides first
     if !archived && r.s("stage") == "plan" && r.s("state") == "blocked" { return words::PLAN.into(); }
     if !archived && r.s("stage") == "pick" { return words::PICK.into(); }
     if !archived && failed_review(r) { return words::REVIEW_FAILED.into(); }
@@ -61,6 +62,7 @@ pub fn who_stands(r: &Obj) -> (String, String) {
     if r.b("archivedAt") { return say("archived", ""); }
     if r.s("stage") == "tried" { return say(if r.s("parentStage") == "pick" { words::PICK } else { words::PASSED }, ""); }
     if r.s("state") == "working" {
+        if crate::lead::wake::held(r) { return say(words::LEAD_DECIDES, who::LEAD); } // (fork)
         if under_review(r) { return say(words::UNDER_REVIEW, who::REVIEWER); }
         if BOARD_STEPS.contains(&r.s("stage")) { return say(step(r.s("stage")), who::BOARD); }
         if r.s("stage") == "queued" { return say(super::queue::short(r), ""); }

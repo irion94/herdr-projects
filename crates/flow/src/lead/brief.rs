@@ -1,6 +1,7 @@
 //! The Lead's first prompt (fork, `lead.agent`): its task line, the task's title and description, the plan when there
 //! is one, the settings it decides within in plain words, the board's fixed rules for a Lead (what wakes it, what it
 //! may do, when it hands a wait to you, what a wake reads), where to read the task, then your own `lead.instructions`.
+//! Also the words of each wake (wake_text).
 use crate::agents::start;
 use crate::delegate::rules::task_line_as;
 use crate::flow::send::shim;
@@ -8,6 +9,7 @@ use crate::json::*;
 use crate::plan;
 use crate::store::repos::cwd_of;
 use crate::store::settings::lookup::{setting_text, work};
+use super::{counts, wake::Wait};
 
 /// The fixed rules, the same for every task: its authority (spec 4.3) and its escalations (spec 4.4) word for word.
 pub const LEAD_RULES: &str = "You are this task's Lead. The working agent does the work; you decide the waits the board wakes you for, so the human is asked only what you cannot answer. You change nothing in the repo: you have no tools to edit, write, commit, push or act on GitHub. You run in the task's own folder on the board; read the task's worktree by its path (below).
@@ -52,4 +54,21 @@ pub fn first_prompt(t: &Obj) -> String {
     let here = format!("Every verb above is `{cmd} lead {id} ...` for this task. Use `{cmd} details {id}` to read findings and failures. The task's worktree: {}", cwd_of(t).display());
     [task_line_as(t, "lead", 0), t.t("title"), t.t("description"), plan, settings, LEAD_RULES.to_string(), here, start::own_words(&who.instructions)]
         .into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join("\n\n")
+}
+/// The words of one wake (spec 4.3), in the form the fixed rules announce: the wait, the board's message, the rounds so
+/// far against their caps, the tries left for its class, and what the Lead may do about it.
+pub fn wake_text(t: &Obj, w: &Wait) -> String {
+    let (id, c) = (t.s("id"), w.class);
+    let (rounds, tries) = (setting_text("review.rounds", Some(t)), setting_text("lead.tries", Some(t)));
+    let verbs = match c {
+        "plan" => format!("`lead {id} plan-ok`, `lead {id} answer \"<points>\"`"),
+        "review" => format!("`lead {id} round \"<findings to fix, findings to skip and why>\"`"),
+        "check" | "finish" => format!("`lead {id} round \"<note>\"`"),
+        _ => format!("`lead {id} answer \"<text>\"`"),
+    };
+    let lr = |k: &str| counts::lead_rounds(t, k);
+    [format!("Lead woke: {c} on {id}."), format!("Board says: {}", t.t("msg")),
+     format!("Rounds: review {} of {rounds}+{}, check {} of {rounds}+{}, pull request {}", t.i("reviewRounds"), lr("review"), t.i("checkFails"), lr("check"), t.i("prRounds")),
+     format!("Tries left for {c}: {} of {tries}", counts::tries_left(t, c)),
+     format!("You may: {verbs} or escalate. Read the details with: {} details {id}", shim().display())].join("\n")
 }
