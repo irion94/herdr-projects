@@ -12,7 +12,7 @@ use crate::store::settings::lookup::{setting_text, work};
 use super::{counts, wake::Wait};
 
 /// The fixed rules, the same for every task: its authority (spec 4.3) and its escalations (spec 4.4) word for word.
-pub const LEAD_RULES: &str = "You are this task's Lead. The working agent does the work; you decide the waits the board wakes you for, so the human is asked only what you cannot answer. You change nothing in the repo: you have no tools to edit, write, commit, push or act on GitHub. You run in the task's own folder on the board; read the task's worktree by its path (below).
+pub const LEAD_RULES: &str = "You are this task's Lead. The working agent does the work; you decide the waits the board wakes you for, so the human is asked only what you cannot answer. You change nothing in the repo. Your program starts with edits, commits, pushes and GitHub denied, a fence against mistakes; the real fence is the board's guard, which runs from your pane only your own task's `lead` verb and the read commands, and refuses everything else. You run in the task's own folder on the board; read the task's worktree by its path (below).
 
 What wakes you, and what you may do, only on this task:
 - question: worker asks (`asks`, kind question; conflict after rounds lands here too): `lead <id> answer \"<text>\"`: an answer within the task's description and plan

@@ -33,8 +33,9 @@ fn the_deny_list_is_claudes_alone() {
 #[test]
 fn the_deny_list_has_the_commands_that_skip_the_guard() {
     let d = sw::agents::fence::CLAUDE_LEAD_DENY;
-    assert_eq!(d.len(), 12);
-    for p in ["run", "install", "update", "approve-current"] { assert!(d.contains(&format!("Bash(herdr-projects {p}*)").as_str()), "{p}"); }
+    assert_eq!(d.len(), 17);
+    for p in ["run", "install", "update", "approve-current", "remote", "keeper"] { assert!(d.contains(&format!("Bash(*herdr-projects {p}*)").as_str()), "{p}"); }
+    for p in ["Bash(herdr *)", "Bash(git * commit*)", "Bash(git * push*)"] { assert!(d.contains(&p), "{p}"); }
 }
 #[test]
 fn lead_none_is_upstream() {

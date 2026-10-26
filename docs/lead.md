@@ -29,7 +29,18 @@ herdr-projects delegate 12 --lead.agent claude --lead.tries 3          # or for 
 ## Claude only, and what it may not do
 
 `lead.agent` takes only programs the board can fence off. For now that is `claude`; any other program is refused with
-the reason. The Lead starts with `--disallowedTools` on:
+the reason.
+
+The real fence is the board's guard on the Lead's pane. From there it runs only `herdr-projects lead <its own id> ...`
+and the read commands `list`, `ls`, `show`, `details`, `models`. Everything else is refused before it runs: `approve`,
+`tell`, `retry`, `fix`, `review`, `finish`, `--anyway`, `stop`, `archive`, `set`, `delegate`, `add`, the autopilot
+commands, and any other task. The same goes for the commands the board runs before that guard looks at what is asked:
+`run`, `keeper`, `keeper-work`, `approve-current`, `remote`, `voice`, `install`, `update`, `board`, `open`,
+`open-coordinator`, `serve`, `doctor` and `docs`, whichever path the Lead runs the program by. The board starts its own
+jobs and the keeper without a pane, so they never meet this guard. `lead` itself runs only from the task's own Lead tab.
+
+The Lead's program also starts with a deny list, a fence against mistakes: it stops the obvious forms before they reach
+the board or git, not every way of writing them. For claude it is `--disallowedTools` on:
 
 ```
 Edit
@@ -40,20 +51,21 @@ Bash(git push*)
 Bash(gh pr *)
 Bash(gh api*)
 Bash(gh issue *)
-Bash(herdr-projects run*)
-Bash(herdr-projects install*)
-Bash(herdr-projects update*)
-Bash(herdr-projects approve-current*)
+Bash(git * commit*)
+Bash(git * push*)
+Bash(herdr *)
+Bash(*herdr-projects run*)
+Bash(*herdr-projects install*)
+Bash(*herdr-projects update*)
+Bash(*herdr-projects approve-current*)
+Bash(*herdr-projects remote*)
+Bash(*herdr-projects keeper*)
 ```
 
-The last four are board commands that run before the board's own guard looks at who asks: a Lead never runs another
-task's pipeline, installs, or swaps the program. `lead.access` is `full` by default, inside this fence, because `ask`
-would stop the Lead at its first command with nobody to answer.
-
-The board's guard also limits what the Lead may run from its pane: `herdr-projects lead <its own id> ...` and the read
-commands `list`, `ls`, `show`, `details`, `models`. Everything else is refused before it runs: `approve`, `tell`,
-`retry`, `fix`, `review`, `finish`, `--anyway`, `stop`, `archive`, `set`, `delegate`, `add`, the autopilot commands,
-and any other task. `lead` itself runs only from the task's own Lead tab.
+`git * commit*` and `git * push*` catch `git -C <worktree> commit|push`. `herdr *` keeps the Lead off herdr's own
+program, which could answer the working agent's permission dialog. The last six are the board's early commands, by any
+path. `lead.access` is `full` by default, inside this fence, because `ask` would stop the Lead at its first command with
+nobody to answer.
 
 ## What wakes it
 
