@@ -32,7 +32,8 @@ pub fn turn_ended(id: &str, role: &str, token: &str, round: i64, extra: &[String
     // Started as one of several attempts and chosen since: its turns are the task's now.
     if let Some(c) = &t { if c.b("chosen") && c.b("attemptOf") { t = get(c.s("attemptOf")); } }
     let Some(t) = t else { return log(&format!("no task {id}")) };
-    if !["agent", "reviewer"].contains(&role) || !token_ok(t.s("id"), role, token, round) { return log(&format!("refused for {id} ({role}): wrong token")); }
+    if !["agent", "reviewer", "lead"].contains(&role) || !token_ok(t.s("id"), role, token, round) { return log(&format!("refused for {id} ({role}): wrong token")); } // (fork) lead
+    if role == "lead" { return crate::lead::life::turn_ended(t.s("id")); } // (fork) counted, never an event for the finish runner
     let j = input(extra);
     // Codex also reports turns of side conversations: a real first prompt starts with the task line, so `side` marks
     // every other report for the runner to judge. And the turns of the agent's own helpers (agents/helpers.rs), which

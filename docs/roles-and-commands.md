@@ -1,6 +1,6 @@
 # Roles and commands
 
-## Four roles
+## Five roles
 
 | Role | What it does |
 |---|---|
@@ -8,6 +8,7 @@
 | **Reviewer** | attacks the finished work, looking for what is wrong |
 | **Watcher** | a small model that writes the "doing now" line and guesses how far along the work is |
 | **Coordinator** | the agent you talk to in the chat; it turns what you type into tasks |
+| **Lead** | answers the agent's waits for the task before you are asked (`lead.agent`, [the Lead](lead.md)) |
 
 ### The Watcher's guess
 
@@ -53,7 +54,8 @@ this to the board" without being told how.
 
 ## Commands
 
-`add`, `list`, `report`, `describe`, `delegate`, `after` ([one task after another](after.md)), `tell`, `stop`,
+`add`, `list`, `report`, `describe`, `delegate`, `after` ([one task after another](after.md)), `tell`, `lead` (only the
+task's Lead runs it: [the Lead](lead.md)), `stop`,
 `approve`, `review`, `retry`, `fix`, `finish`, `details`, `pin`, `archive`, `restore`, `clear`, `set`, `unset`, `show`,
 `automations` ([automations](automations.md)), `machines` ([other machines](other-machines.md)), `install`, `update`
 ([installing](install.md)), `remove-extras`.

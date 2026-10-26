@@ -6,6 +6,7 @@ Every task with an agent gets its own Herdr space. Inside it, each helper has it
 |---|---|
 | `Agent` | the agent doing the task |
 | `Reviewer #1`, `Reviewer #2`, … | the reviewer, one tab per review round |
+| `Lead` | the task's Lead ([the Lead](lead.md)) |
 | `Planner` | the agent writing the task's plan ([a plan first](plan.md)) |
 | `Plan review` | the reviewer checking that plan |
 | `Agent A`, `Agent B`, … and `Picker` | [several attempts](attempts.md) at one task, and the reviewer who compares them |
@@ -23,6 +24,8 @@ Two tabs live outside the task spaces: `Coordinator` in the home space ([the Coo
 - **`Reviewer #N`** opens when a review starts and closes when it ends, whatever the result. It also closes when you
   stop the task, and when a review is cut off and tried again. `N` is the review round, the same number as the row's
   `R#2` tag. A reviewer is never a pane inside the agent's tab.
+- **`Lead`** (set by `lead.agent`) opens when the task's agent starts and closes when the task is done, archived, or stopped
+  by you (not at a limit). It starts again, with a new chat, on the next delegate or restart.
 - **`Planner`** (set by `plan.agent`) closes after you say yes to the plan. `Plan review` is used when
   `plan.approve` is `reviewer`.
 - **Attempts:** when one attempt is picked, the other attempts' tabs close. The kept one keeps its name.

@@ -97,13 +97,13 @@ fn the_settings_page_every_work_setting_plain_and_a_mark_on_this_tasks_own() {
     set_value("review.rounds", &json!(5), &Scope::default()).unwrap();
     set_value("merge.by", &json!("itself"), &Scope::repo("proj")).unwrap();
     set_value("reviewer.agent", &json!("claude"), &Scope::task(&task(&id))).unwrap();
-    let mut s = open(&w.root, 65); s.s.sel = id.clone(); s.load();
+    let mut s = open(&w.root, 73); s.s.sel = id.clone(); s.load(); // (fork) +8: the Lead's group (lead.*)
     s.press(&["ctrl+e"]);
     let text = s.screen(120).join("\n");
     assert!(text.starts_with(" Settings  PRJ-1 \"One\""), "{text}");
     assert!(text.ends_with(&format!("  ↑ ↓ move · enter change · {} put back · esc back to the task", key_name("putBack"))), "{text}");
     assert!(!has(&text, "Coordinator|put an agent|all keys"));
-    for name in sw::store::settings_list::work() { assert_eq!(!row_of(&text, name).is_empty(), !["worker.fast", "reviewer.fast"].contains(&name), "{name}"); }
+    for name in sw::store::settings_list::work() { assert_eq!(!row_of(&text, name).is_empty(), !["worker.fast", "reviewer.fast", "lead.fast"].contains(&name), "{name}"); } // (fork) lead.fast too
     for name in sw::store::settings_list::board() { assert_eq!(row_of(&text, name), "", "{name}"); }
     assert!(has(&row_of(&text, "worker.agent"), r"^▌›   Agent's program +claude +worker\.agent *$"), "{}", row_of(&text, "worker.agent"));
     assert!(has(&row_of(&text, "reviewer.agent"), r"^   \* Reviewer's program +claude +reviewer\.agent *$"));
@@ -126,7 +126,7 @@ fn the_settings_page_every_work_setting_plain_and_a_mark_on_this_tasks_own() {
 fn the_settings_page_move_change_and_put_back() {
     let w = world();
     let id = w.add("One"); let other = w.add("Two");
-    let mut s = open(&w.root, 34); s.s.sel = id.clone(); s.load();
+    let mut s = open(&w.root, 42); s.s.sel = id.clone(); s.load(); // (fork) +8: the Lead's group (lead.*)
     let mine = || task(&id).at("settings").clone();
     let names = |s: &common::board::Board| sw::board::update::edit::rows(&s.s).iter().map(|x| x.t("name")).collect::<Vec<_>>();
     let at = |s: &common::board::Board| names(s)[s.s.editing.as_ref().unwrap().at].clone();

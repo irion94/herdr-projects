@@ -1,4 +1,5 @@
 //! What `herdr-projects help` prints: every command, in a few words each.
+// (fork): the `lead` line below is the Lead's verb (docs/lead.md)
 pub const HELP: &str = r#"herdr-projects: a work board for herdr
 
   herdr-projects                     open the board here (in herdr: bind a key to the plugin action "open")
@@ -23,6 +24,7 @@ pub const HELP: &str = r#"herdr-projects: a work board for herdr
                                       --now: start a task that waits without waiting
   herdr-projects after <id> [ID[,ID…] | --clear]   what a task waits for: shown, changed, or dropped (it starts then)
   herdr-projects tell <id> <text>              send a message to the task's agent
+  herdr-projects lead <id> answer <text>|plan-ok|round <note>|escalate <why>   the task's Lead only (lead.agent): from its Lead tab
   herdr-projects stop <id>                     stop its agent
   herdr-projects approve <id> [--anyway]       merge finished work that waits for approval (--anyway: also when its review
                                                 or its pull request's checks on GitHub failed);

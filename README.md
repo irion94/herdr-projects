@@ -50,7 +50,7 @@ An agent that asks you something, wants a permission or a sign-in says so to the
 
 <table>
 <tr>
-<td align="center" valign="top" width="33%"><h3>1️⃣</h3><b>Install the plugin</b><br /><sub>Run <code>herdr plugin install irion94/herdr-projects --ref v1.2.18-rasphi.3</code>. It downloads the one program for your platform: no Node, no npm.</sub></td>
+<td align="center" valign="top" width="33%"><h3>1️⃣</h3><b>Install the plugin</b><br /><sub>Run <code>herdr plugin install irion94/herdr-projects --ref v1.2.18-rasphi.4</code>. It downloads the one program for your platform: no Node, no npm.</sub></td>
 <td align="center" valign="top" width="33%"><h3>2️⃣</h3><b>Open the board</b><br /><sub>Run the plugin's action "Open the work board", or <code>herdr plugin action invoke open --plugin herdr-projects</code> in a Herdr pane. Its first screen offers a key that opens it from anywhere in Herdr.</sub></td>
 <td align="center" valign="top" width="33%"><h3>3️⃣</h3><b>Type what needs doing</b><br /><sub>Press <code>Enter</code> and the Coordinator makes it a task, or <code>Tab</code> and each task gets an agent at once. <code>?</code> shows everything else you can do.</sub></td>
 </tr>

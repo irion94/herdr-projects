@@ -25,6 +25,7 @@ pub fn archive(id: &str) -> Res<Task> {
         if t.at("link").b("workspace") && t.at("link").b("ownsWorkspace") { workspace = t.at("link").t("workspace"); socket = t.at("link").t("socket"); }
         Ok(Change::Write)
     })?;
+    crate::lead::life::close_lead(t.s("id")); // (fork) an archived task leaves the board's lists, so its Lead closes here
     if !workspace.is_empty() && socket == current_socket() {
         let h = Herdr::new(Some(socket));
         let _ = h.workspace_close(&workspace);

@@ -157,6 +157,7 @@ fn delegate_steps(id: &str, g: &mut Guard, mut t: Task) -> Res<()> {
             }
         }
     }
+    t = crate::lead::life::start_lead(g, t, &api)?; // (fork) the task's Lead, in a tab of its own, before its agent
     // 3. The agent, in the workspace's root pane, then the task. A task whose agent ran before continues.
     agent_now(g, t)?;
     // Research only or not is decided now, for this run, right before the program is started.
@@ -209,6 +210,7 @@ fn restart_steps(id: &str, g: &mut Guard, mut t: Task) -> Res<()> {
         t = g.set(|t| { let owns = !t.b("attemptOf"); link_pane(t, &p, "", owns); })?;
     }
     t = agent_now(g, t)?;
+    t = crate::lead::life::start_lead(g, t, &api)?; // (fork) a Lead that is gone starts again with its agent
     // A start that was asked for and never got as far as its agent (its setup failed): this is that start.
     if t.b("researchOpen") { let mut refusal = None; t = g.set(|t| { if let Err(e) = r::starts_as(t) { refusal = Some(e); } })?; if let Some(e) = refusal { return Err(e); } }
     let waiting: Vec<String> = take_text(id)?.iter().map(|m| m.t("text")).collect();

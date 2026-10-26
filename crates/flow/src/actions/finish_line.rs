@@ -194,10 +194,15 @@ fn busy_to(t: &mut Task, stage: &str, msg: &str, armed: bool) -> Res<Change> {
     Ok(Change::Write)
 }
 /// "Retry": do again the step that went wrong, as it stands, with nothing sent to the agent to fix.
-pub fn retry(id: &str) -> Res<Said> {
+pub fn retry(id: &str) -> Res<Said> { retry_as(id, false) }
+/// (fork) The Lead's finish round: `retry` of a task that stands at `failed` only, read once with the rest, so it never
+/// reaches the merge's yes at `approval`.
+pub fn retry_failed(id: &str) -> Res<Said> { retry_as(id, true) }
+fn retry_as(id: &str, failed_only: bool) -> Res<Said> {
     let cur = find(id)?;
     assert_unarchived(&cur)?;
     let cid = cur.t("id");
+    if failed_only && cur.s("stage") != "failed" { crate::fail!("{cid} no longer waits at its failed step: nothing was re-run."); } // (fork)
     // A merge that failed: the yes was given before it. Not one GitHub's failed checks stopped: that takes `--anyway`.
     if cur.s("stage") == "approval" { return approve(&cid, None, cur.b("mergeFailed") && crate::land::checks::failed_on(&cur).is_none()); }
     if stopped_at_limit(&cur) { return carry_on(&cid, false); }

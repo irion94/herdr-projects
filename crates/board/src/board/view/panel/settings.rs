@@ -40,7 +40,7 @@ pub fn settings(k: &mut Kit, c: &Ctx, r: &Obj) -> Drawn {
     // Each role reads the same way: program and version with its model, effort; fast, "asks first" and words of
     // your own only where they are so, or where somebody said otherwise.
     let role = |name: &str, kind: &str, version: &str| -> Vec<Option<(String, Vec<String>)>> {
-        let on = if name == "worker" { r.t("on") } else { r.t("reviewerOn") };
+        let on = if name == "worker" { r.t("on") } else if name == "reviewer" { r.t("reviewerOn") } else { String::new() }; // (fork) lead: no per-task agent
         let who = agent_of(&if on.is_empty() { sval(&format!("{name}.agent")) } else { on });
         let k = if kind.is_empty() { who.kind.clone() } else { kind.to_string() };
         let model = if k == who.kind { who.model.clone() } else { String::new() };
@@ -59,6 +59,7 @@ pub fn settings(k: &mut Kit, c: &Ctx, r: &Obj) -> Drawn {
     let takes = |name: &str| -> Option<Vec<Option<(String, Vec<String>)>>> { if !backed { return None; } let v = val(name); let who = if v.is_array() { strings(&v).join(", then ") } else { "nobody".into() }; Some(vec![it(format!("{who} · when the {} cannot go on", if name == "worker.fallback" { "agent" } else { "reviewer" }), &[name])]) };
     row("Agent", role("worker", r.s("agent"), r.s("agentVersion")), false, false);
     if let Some(t) = takes("worker.fallback") { row("Takes over", t, false, false); }
+    if sval("lead.agent") != "none" { row("Lead", role("lead", "", ""), false, false); } // (fork)
     // A plan first: who says yes to it, and who writes it when that is not the working agent.
     let plan_by = sval("plan.approve");
     let planner = agent_of(&sval("plan.agent"));

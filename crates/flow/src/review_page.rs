@@ -24,6 +24,7 @@ pub fn ensure_server() -> Value {
 pub fn start_server(prog: &Path) -> Value {
     let mut c = std::process::Command::new(prog);
     c.arg("serve").current_dir(data_dir()).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+    for k in ["HERDR_PANE_ID", "HERDR_TAB_ID", "HERDR_WORKSPACE_ID"] { c.env_remove(k); } // (fork) no pane's: a Lead's would be refused (lead/guard.rs)
     crate::runner::detach(&mut c);
     let pid = crate::runner::start_reaped(&mut c) as i64;
     if pid == 0 { return Value::Null; }

@@ -19,7 +19,7 @@ pub fn plan(k: &mut Kit, c: &Ctx, r: &Obj) -> bool {
     if !p.is_object() { return false; }
     let w = p.at("writer");
     let who = if w.is_object() { format!("{}{}", w.s("kind"), if p.b("model") || w.b("model") { format!(" · {}", if p.b("model") { p.s("model") } else { w.s("model") }) } else { String::new() }) } else { "the working agent".into() };
-    let yes = if p.b("approvedAt") { format!("approved by {} {} ago", match p.s("approvedBy") { "reviewer" => "the reviewer", "nobody" => "nobody: plan.approve was taken off", _ => "you" }, age(c.now - p.i("approvedAt"))) }
+    let yes = if p.b("approvedAt") { format!("approved by {} {} ago", match p.s("approvedBy") { "reviewer" => "the reviewer", "lead" => "the Lead", "nobody" => "nobody: plan.approve was taken off", _ => "you" }, age(c.now - p.i("approvedAt"))) } // (fork) the Lead's yes
         else if r.s("stage") == "plan" { "waits for your yes".into() } else if p.b("at") { "written".into() } else { "being written".into() };
     let mut lines = vec![k.head("Plan", None)];
     lines.extend(k.fact_text("Stands", &yes));

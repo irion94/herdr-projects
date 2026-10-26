@@ -58,6 +58,7 @@ pub fn show(t: &Obj, live: &Value, now: i64) -> Show {
     let agent = t.b("app") && t.s("app") != t.s("owner");
     // A turn cut off by a passing provider error, and the board waiting to try again by itself: work going on.
     if let Some(w) = waiting_of(t) { let msg = wait_line(w, now); let rv = w.s("who") == "reviewer"; return out("working", &|s| { s.msg = msg.clone(); s.reviewing = rv; }); }
+    if crate::lead::wake::held(t) { let c = crate::lead::wake::class_now(t); return out("working", &|s| s.msg = format!("lead decides: {c}")); } // (fork)
     match t.s("stage") {
         // nobody started it; what it is to wait for (after.rs) is not said on its row: only once it is queued
         "todo" => return out("idle", &|_| {}),

@@ -61,6 +61,7 @@ fn pass(socket: &str, force: Force) {
             if get(t.s("id")).is_none_or(|c| runner_alive(&c)) { continue; }
             if due(&format!("tidy-{}", key(t.s("id"))), 30000) { spawn_runner("cleanup", t.s("id"), if t.at("tidy").s("deleteBranch") == "merged" { &["--merged"] } else { &[] }); }
         }
+        crate::lead::pass::lead_pass(&list(ListOpts::default()), socket); // (fork) the Lead is woken before you are told
         crate::notify::notify_pass(&list(ListOpts::default()));
         resync(&tasks, socket);
         // A chat that changed the code, and you are done with it: its one review (finish/chat.rs).

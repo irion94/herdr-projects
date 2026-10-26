@@ -66,6 +66,8 @@ fn run(cmd: &str, a: &Args) -> Res<i32> {
     if !["help", "--skill", "skill", "version"].contains(&cmd) && !a.flags.b("help") { move_settings(); if cmd != "docs" { crate::store::keys_given::keys_at_start(); } }
     let flag = |k: &str| a.flags.get(k).map(text).unwrap_or_default();
     let pos = |n: usize| a.pos.get(n).cloned().unwrap_or_default();
+    // (fork) a Lead's hand never reaches the early commands that act on tasks or the program (lead/guard.rs)
+    if crate::lead::guard::LEAD_EARLY_REFUSED.contains(&cmd) { crate::lead::guard::lead_early(cmd, caller().as_ref().map(|(t, r)| (t, *r)))?; }
     // ---- entries herdr itself calls: kept light, they run on every agent status change -------------------------------
     match cmd {
         // Run by an agent's own hook: silent, always 0.

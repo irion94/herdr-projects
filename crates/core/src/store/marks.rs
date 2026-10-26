@@ -29,7 +29,7 @@ fn tokens_file(id: &str) -> PathBuf { dir_of(id).join("tokens.json") }
 pub fn set_token(id: &str, role: &str, token: &str, round: i64) -> Res<()> {
     use std::os::unix::fs::OpenOptionsExt;
     let mut j = read_obj(&tokens_file(id)).unwrap_or_default();
-    if role == "reviewer" { j.obj_mut("reviewer").put(&round.to_string(), token); } else { j.put("agent", token); }
+    match role { "reviewer" => j.obj_mut("reviewer").put(&round.to_string(), token), "lead" => j.put("lead", token), _ => j.put("agent", token) } // (fork) the Lead's own slot
     fs::create_dir_all(dir_of(id))?;
     let mut f = fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(tokens_file(id))?;
     std::io::Write::write_all(&mut f, serde_json::to_string(&j)?.as_bytes())?;
@@ -43,7 +43,7 @@ pub fn copy_token(from: &str, to: &str) -> Res<()> {
 }
 pub fn token_ok(id: &str, role: &str, token: &str, round: i64) -> bool {
     let j = read_obj(&tokens_file(id)).unwrap_or_default();
-    let want = if role == "reviewer" { j.at("reviewer").t(&round.to_string()) } else { j.t("agent") };
+    let want = match role { "reviewer" => j.at("reviewer").t(&round.to_string()), "lead" => j.t("lead"), _ => j.t("agent") }; // (fork)
     !want.is_empty() && !token.is_empty() && want == token
 }
 // ---- turn-ended events: appended by the agent's own hook, judged only by the finish runner ---------------------------

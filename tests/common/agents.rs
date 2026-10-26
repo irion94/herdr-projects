@@ -1,9 +1,9 @@
 //! The fake herdr's agents: started in a pane, prompted, sent keys, read. Each prompt plays the next step of the
-//! script for its role (worker, reviewer for a name ending in -r, picker for -pick, the Coordinator): it writes files,
-//! commits, writes the closing note, the plan, the verdict or the comparison where the board tells an agent to, and
-//! may end its turn with a recorded ending (tests/fixtures/endings) and run the agent's own turn-end report. A step's
-//! `then` is a step of the same turn played later: on the board's `after`-th look at the agent (3; 0: never), or by
-//! `go_on`.
+//! script for its role (worker, reviewer for a name ending in -r, picker for -pick, the Lead for -l, the Coordinator):
+//! it writes files, commits, writes the closing note, the plan, the verdict or the comparison where the board tells an
+//! agent to, and may end its turn with a recorded ending (tests/fixtures/endings) and run the agent's own turn-end
+//! report. A step's `then` is a step of the same turn played later: on the board's `after`-th look at the agent (3; 0:
+//! never), or by `go_on`.
 use super::herdr::{arr, fail, ok, out, FakeHerdr as F, Out};
 use super::worktrees::git;
 use serde_json::{json, Value};
@@ -128,9 +128,9 @@ pub fn go_on(f: &F, pi: usize) {
 pub fn play(f: &F, pi: usize, prompt: &str) {
     let name = f.st.borrow()["panes"][pi]["agent"].t("name");
     let coordinator = name.starts_with("sw-coordinator");
-    let role = if coordinator { "coordinator" } else if regex::Regex::new(r"-pick(-\d+)?$").unwrap().is_match(&name) { "picker" } else if regex::Regex::new(r"-r(-\d+)?$").unwrap().is_match(&name) { "reviewer" } else { "worker" };
+    let role = if coordinator { "coordinator" } else if regex::Regex::new(r"-pick(-\d+)?$").unwrap().is_match(&name) { "picker" } else if regex::Regex::new(r"-r(-\d+)?$").unwrap().is_match(&name) { "reviewer" } else if regex::Regex::new(r"-l(-\d+)?$").unwrap().is_match(&name) { "lead" } else { "worker" }; // (fork) -l: the Lead
     let step = { let mut sc = f.script.borrow_mut(); let q = arr(&mut sc, role); if q.is_empty() { Value::Null } else { q.remove(0) } };
-    let step = if !step.is_null() { step } else { match role { "picker" => json!({ "comparison": { "pick": "A", "why": "A does all of it with the smallest change." } }), "reviewer" => json!({ "verdict": { "meets": true, "findings": [], "text": "Looks right. Nothing found." } }), "coordinator" => json!({}), _ => json!({ "note": "Done." }) } };
+    let step = if !step.is_null() { step } else { match role { "picker" => json!({ "comparison": { "pick": "A", "why": "A does all of it with the smallest change." } }), "reviewer" => json!({ "verdict": { "meets": true, "findings": [], "text": "Looks right. Nothing found." } }), "coordinator" | "lead" => json!({}), _ => json!({ "note": "Done." }) } };
     {
         let mut st = f.st.borrow_mut();
         arr(&mut st["panes"][pi]["agent"], "prompts").push(json!(prompt));

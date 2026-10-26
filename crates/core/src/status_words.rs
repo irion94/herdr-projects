@@ -20,6 +20,7 @@ pub mod words {
     pub const BEHIND: &str = "behind main";
     pub const PICK: &str = "pick one";
     pub const PASSED: &str = "passed its check";
+    pub const LEAD_DECIDES: &str = "lead decides"; // (fork) the task's Lead decides a wait (lead.agent)
 }
 /// Finished work whose last review failed. It still waits for your yes or no, but it is not "ready".
 pub fn review_failed(t: &Obj) -> bool {
@@ -33,7 +34,7 @@ pub fn review_tally(t: &Obj) -> String {
     if gate::is_int(rv.at("score")) { format!("{}/5{}", rv.t("score"), if rv.at("recommend") == &json!(false) { ", reviewer says no" } else { "" }) } else { String::new() }
 }
 /// Who is on a task, as herdr's sidebar names them before where it stands.
-pub mod who { pub const AGENT: &str = "agent"; pub const REVIEWER: &str = "reviewer"; pub const BOARD: &str = "board"; pub const YOU: &str = "you"; }
+pub mod who { pub const AGENT: &str = "agent"; pub const REVIEWER: &str = "reviewer"; pub const BOARD: &str = "board"; pub const YOU: &str = "you"; pub const LEAD: &str = "lead"; /* (fork) */ }
 /// The board's own steps, each in a word, said after `board`.
 pub fn step(stage: &str) -> &'static str { match stage { "starting" => "starting", "setup" => "setting up", "checking" => "checking", "pushing" => "pushing", "merging" => "merging", _ => "" } }
 pub const QUEUED: &str = "queued";
