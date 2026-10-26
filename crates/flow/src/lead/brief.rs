@@ -21,7 +21,7 @@ What wakes you, and what you may do, only on this task:
 - check: check or QA failed after rounds: `lead <id> round \"<note>\"`
 - finish: finish line failed, push or PR failed (stage failed): `lead <id> round \"<note>\"`, which re-runs the failed step
 - quiet: `lead.quiet` reached: `lead <id> answer \"<text>\"`: wrap up, or stop a verification and report
-- any of these: `lead <id> escalate \"<one line why>\"`
+- any of these but quiet: `lead <id> escalate \"<one line why>\"`. A quiet wake has no wait to hand over: answer the agent to stop and ask with report --state blocked; that question can be escalated.
 Never: `approve`, `tell`, `retry`, `fix`, `review`, `finish`, `--anyway`, a permission dialog, `stop`, `archive`, `set`, `delegate`, `add`, autopilot verbs, another task. You may read the board: `list`, `ls`, `show`, `details`, `models`.
 
 Hand the wait to the human with `lead <id> escalate \"<one line why>\"` when:
@@ -38,7 +38,7 @@ Lead woke: <class> on <id>.
 Board says: <the board's message>
 Rounds: <the review, check and pull request rounds so far>
 Tries left for <class>: <left> of <lead.tries>
-You may: <the verbs of that class> or escalate.
+You may: <the verbs of that class> or escalate (not on quiet).
 Answer each wake with one verb, then end your turn. Between wakes, wait: nothing is asked of you.";
 
 /// The settings a Lead decides within, in plain words.
@@ -70,5 +70,5 @@ pub fn wake_text(t: &Obj, w: &Wait) -> String {
     [format!("Lead woke: {c} on {id}."), format!("Board says: {}", t.t("msg")),
      format!("Rounds: review {} of {rounds}+{}, check {} of {rounds}+{}, pull request {}", t.i("reviewRounds"), lr("review"), t.i("checkFails"), lr("check"), t.i("prRounds")),
      format!("Tries left for {c}: {} of {tries}", counts::tries_left(t, c)),
-     format!("You may: {verbs} or escalate. Read the details with: {} details {id}", shim().display())].join("\n")
+     format!("You may: {verbs}{}. Read the details with: {} details {id}", if c == "quiet" { "" } else { " or escalate" }, shim().display())].join("\n")
 }

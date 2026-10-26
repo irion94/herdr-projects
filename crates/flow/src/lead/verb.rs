@@ -14,15 +14,17 @@ use crate::store::settings::{lookup::setting_text, values::ms};
 use crate::store::tasks::{find, get, update, Change};
 
 const VERBS: [&str; 4] = ["answer", "plan-ok", "round", "escalate"];
-/// Does verb `act` fit a wait of `class`? escalate fits every one.
+/// Does verb `act` fit a wait of `class`? escalate fits every one but quiet, which has no wait to hand over.
 fn fits(act: &str, class: &str) -> bool {
     match act {
         "answer" => ["question", "plan", "quiet"].contains(&class),
         "plan-ok" => class == "plan",
         "round" => ["review", "check", "finish"].contains(&class),
-        _ => true,
+        _ => class != "quiet",
     }
 }
+/// Why `escalate` does not fit a quiet wake, and what the Lead does instead.
+pub const QUIET_ESCALATE: &str = "A quiet wake has no wait to hand over: answer the agent to stop and ask with report --state blocked; that question can be escalated.";
 /// The verbs that fit a wait of `class`, as the Lead types them.
 fn fitting(id: &str, class: &str) -> String {
     VERBS.iter().filter(|a| fits(a, class)).map(|a| format!("`lead {id} {a}`")).collect::<Vec<_>>().join(", ")
@@ -44,6 +46,7 @@ pub fn lead(id: &str, act: &str, words: &str, me: Option<(&Obj, &str)>) -> Res<S
         let open = wait_of(t, now(), ms(&setting_text("lead.quiet", Some(t)))).map(|w| w.key);
         if !deciding(t) || open.as_deref() != Some(wake.s("key")) { crate::fail!("Nothing waits for the Lead on {id}."); }
         let c = wake.t("class");
+        if act == "escalate" && c == "quiet" { crate::fail!("{QUIET_ESCALATE}"); }
         if !fits(act, &c) { crate::fail!("{act} does not fit the {c} wait on {id}: the Lead may {} there.", fitting(&id, &c)); }
         if act != "plan-ok" && words.is_empty() { crate::fail!("lead {id} {act} needs the words: herdr-projects lead {id} {act} <text>."); }
         acted(t, &c, act);

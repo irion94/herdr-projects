@@ -80,11 +80,15 @@ the board's message, the round counters, the tries left for that class and the v
 | **check**: the check or QA failed after its rounds | `lead <id> round "<note>"` |
 | **finish**: the push or the pull request failed (stage failed) | `lead <id> round "<note>"`: the failed step runs again; never the merge |
 | **quiet**: `lead.quiet` is reached | `lead <id> answer "<text>"`: wrap up, or stop a verification and report |
-| any of these | `lead <id> escalate "<one line why>"` |
+| any of these but quiet | `lead <id> escalate "<one line why>"` |
 
-A verb only fits its own class: `plan-ok` on a question is refused and says which verbs fit. A verb on a wait that has
-already moved on (you answered, or another wait came) is refused with `Nothing waits for the Lead on <id>.`, so one
-wait never gets two answers.
+A verb only fits its own class: `plan-ok` on a question is refused and says which verbs fit. A verb on a wait that
+has already moved on (you answered, or another wait came) is refused with `Nothing waits for the Lead on <id>.`, so
+one wait never gets two answers.
+
+`escalate` on a quiet wake is refused too: nobody waits for an agent that works, so there is nothing to hand you. The
+refusal says what to do instead: `A quiet wake has no wait to hand over: answer the agent to stop and ask with report
+--state blocked; that question can be escalated.`
 
 ### What never wakes it
 
