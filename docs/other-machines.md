@@ -23,7 +23,7 @@ Each other machine needs, once:
 
 ```sh
 # git, gh, the agent programs it will run, then:
-git clone -b v1.2.18-rasphi.3 https://github.com/irion94/herdr-projects && cd herdr-projects
+git clone -b v1.2.18-rasphi.4 https://github.com/irion94/herdr-projects && cd herdr-projects
 herdr plugin link "$PWD"
 sh bin/run.sh install             # gets the program and writes its launcher
 ```
