@@ -32,3 +32,16 @@ fn escalate_on_a_quiet_wake_is_refused_with_what_to_do_instead() { // final revi
     assert!(sw::lead::wake::deciding(&t) && t.at("lead").at("escalated").is_null(), "the wake stays open: {}", t.at("lead"));
     assert!(sw::lead::brief::LEAD_RULES.contains("any of these but quiet"));
 }
+#[test]
+fn lead_quiet_counts_from_the_agents_last_turn_end_too() { // final review 9
+    let w = lead_world(json!({ "lead.quiet": "1m" })); let id = at_work(&w, 3);
+    let t = task(&id);
+    let mut handled = t.at("handled").as_object().cloned().unwrap_or_default();
+    handled.put("at", t.i("armedAt") + 50_000); // a turn end the board handled 50s into the turn, the task still working
+    sw::store::tasks::set(&id, json!({ "handled": handled })).unwrap();
+    sw::clock::advance(61_000); pass(&w, &id);
+    assert!(wakes(&w, &id).is_empty(), "11s since its last turn end is not quiet");
+    sw::clock::advance(50_000); pass(&w, &id);
+    assert_eq!(wakes(&w, &id).len(), 1);
+    assert_eq!(task(&id).at("lead").i("quietFor"), t.i("armedAt") + 50_000);
+}

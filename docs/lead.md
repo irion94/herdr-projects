@@ -141,7 +141,7 @@ The board hands a wait over by itself in these cases, each with its line first:
 |---|---|---|---|
 | `lead.tries` | `2` | the Lead has acted this many times on one class of wait in the task's whole life (counted per task and class, never reset by a stage change). `0`: every wait goes to you | `Lead: used its N tries on <class> (lead.tries)` |
 | `lead.timeout` | `15m` | a wake is open and the Lead has not acted for this long. It takes no `none` | `Lead: did not decide in 15m (lead.timeout)` |
-| `lead.quiet` | `none` | not a handover: it wakes the Lead when the working agent has worked this long (`40m`) without a turn end or report, once per quiet stretch. `none`: only waits wake it | |
+| `lead.quiet` | `none` | not a handover: it wakes the Lead when the working agent has worked this long (`40m`) without a turn end or report, once per quiet stretch. It counts from the later of the turn's start and the last turn end the board handled; the only report an agent can give on its own task, `--state blocked`, ends the stretch. `none`: only waits wake it | |
 
 And two more:
 

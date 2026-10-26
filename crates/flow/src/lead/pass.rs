@@ -51,7 +51,7 @@ fn one(t: &Obj) {
     if running(t) == Some(false) { let _ = escalate(id, &w.key, c, &line("is not running")); return; }
     let Ok(t) = update(id, |c| {
         if deciding(c) || c.at("lead").s("lastKey") == w.key || wait_of(c, n, ms(&setting_text("lead.quiet", Some(c)))).is_none_or(|x| x.key != w.key) { return Ok(Change::Keep); }
-        let armed = c.i("armedAt");
+        let armed = super::wake::quiet_since(c);
         let l = c.obj_mut("lead");
         l.put("wake", json!({ "key": w.key, "class": w.class, "at": n, "sent": false }));
         l.put("lastKey", w.key.clone());

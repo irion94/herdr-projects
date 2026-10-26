@@ -34,12 +34,17 @@ pub fn class_of(t: &Obj) -> Option<&'static str> {
 /// The wait that wakes the Lead now: a class of `class_of`, or a working agent quiet for `quiet_ms` (0: never).
 pub fn wait_of(t: &Obj, now: i64, quiet_ms: i64) -> Option<Wait> {
     if let Some(c) = class_of(t) { return Some(Wait { class: c, key: key_of(c, t) }); }
-    (on(t) && !t.b("attemptOf") && quiet_ms > 0 && t.s("stage") == "working" && now - t.i("armedAt") >= quiet_ms).then(|| Wait { class: "quiet", key: key_of("quiet", t) })
+    (on(t) && !t.b("attemptOf") && quiet_ms > 0 && t.s("stage") == "working" && now - quiet_since(t) >= quiet_ms).then(|| Wait { class: "quiet", key: key_of("quiet", t) })
 }
+/// Since when the working agent has been quiet: its turn began (`armedAt`), or the board last handled one of its turn
+/// ends (`handled.at`), whichever came later. Its own reports while it works are not counted: an agent's task takes
+/// only `report --state blocked` from it, which ends the quiet wait by itself (the task then asks).
+pub fn quiet_since(t: &Obj) -> i64 { t.i("armedAt").max(t.at("handled").i("at")) }
 /// One key per wait: its class and the turn it came in (a new turn of the agent is a new wait). A failed check or finish
 /// step also names its failure: the finish line runs a step again in the same turn, and a second failure is a new wait.
 pub fn key_of(class: &str, t: &Obj) -> String {
     if ["check", "finish"].contains(&class) { return format!("{class}@{}:{}", t.i("armedAt"), t.at("failure").i("at")); }
+    if class == "quiet" { return format!("quiet@{}", quiet_since(t)); } // one quiet stretch, one wake
     format!("{class}@{}", t.i("armedAt"))
 }
 /// A wake is open: the Lead was woken and has not acted, escalated or timed out.
