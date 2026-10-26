@@ -18,6 +18,10 @@ fn escalate_hands_the_wait_to_the_human_with_the_leads_line_and_a_notice() {
     assert_eq!(t.at("lead").at("tries").i("question"), 0, "an escalation is no try");
     assert_eq!(wakes(&w, &id).len(), 1, "it never wakes the Lead again");
     let at = t.at("notice").i("at"); pass(&w, &id); assert_eq!(task(&id).at("notice").i("at"), at);
+    let lead_of = || { let (v, _) = crate::common::pilot::cli(&["list", "--json"]).unwrap(); v.as_array().unwrap().iter().find(|x| x.s("id") == id).unwrap().t("lead") };
+    assert_eq!(lead_of(), "escalated", "final review 8: while the wait stands");
+    sw::actions::talk::tell(&id, "Green.", false).unwrap(); settle(&id);
+    assert_eq!(lead_of(), "", "the wait moved on");
 }
 #[test]
 fn a_lead_round_on_a_finish_wait_runs_the_step_again_and_never_the_merge() {

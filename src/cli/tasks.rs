@@ -27,7 +27,7 @@ fn brief(t: &Obj) -> Value {
     if t.b("archivedAt") { o.put("archivedAt", t.at("archivedAt").clone()); }
     if let Some(rv) = current_review(t) { o.put("review", rv.clone()); }
     if review_round(t) > 0 { o.put("reviewRound", review_round(t)); }
-    if crate::lead::wake::held(t) { o.put("lead", "deciding"); } // (fork)
+    if crate::lead::wake::held(t) { o.put("lead", "deciding"); } else if crate::lead::wake::escalated(t) { o.put("lead", "escalated"); } // (fork)
     o.retain(|k, v| !v.is_null() && !(k == "app" && *v == json!("")));
     Value::Object(o)
 }

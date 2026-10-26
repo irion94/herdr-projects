@@ -53,6 +53,9 @@ pub fn held(t: &Obj) -> bool {
     if deciding(t) { return n - t.at("lead").at("wake").i("at") < timeout_ms(t); }
     class_of(t).map(|c| t.at("lead").s("lastKey") != key_of(c, t) && n - t.i("at") < GRACE_MS).unwrap_or(false)
 }
+/// The wait the task stands at went to the human through the Lead (it escalated, or the board did for it): `list --json`
+/// says `"lead": "escalated"` while it stands.
+pub fn escalated(t: &Obj) -> bool { class_of(t).is_some_and(|c| t.at("lead").at("escalated").s("key") == key_of(c, t)) }
 /// `lead.timeout` in milliseconds.
 pub fn timeout_ms(t: &Obj) -> i64 { ms(&setting_text("lead.timeout", Some(t))) }
 /// The class the Lead decides now: the open wake's, or the wait's.

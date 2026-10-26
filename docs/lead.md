@@ -113,6 +113,8 @@ A turn that ends with no verb does not escalate by itself; only `lead.timeout` d
 
 - While a wake is open the task's state word is `lead decides`, in the group working, not `needs you`.
 - `herdr-projects list --json` has `"lead": "deciding"` on that task, so a tool that lists tasks (crew-queue) can show it.
+  Once the wait has gone to you through the Lead (it escalated, or the board did for it), it has `"lead": "escalated"`
+  for as long as that wait stands. A quiet wake has no wait of yours, so it never shows as escalated.
 - Your notification for that wait is held: while a wake is open, for at most `lead.timeout`; and for a wait the Lead may
   decide that has not reached it yet, for at most two minutes. Nothing is hidden for good: past those, you are told as
   you would be without a Lead.
