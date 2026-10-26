@@ -85,3 +85,14 @@ fn after_a_round_that_fixed_the_review_a_later_review_wait_wakes_the_lead_again(
     assert_eq!(wakes(&w, &id).len(), 2, "{}", t.s("msg"));
     assert!(!t.s("msg").starts_with("Lead:"), "{}", t.s("msg"));
 }
+#[test]
+fn a_finish_round_on_a_task_now_at_approval_is_refused_and_nothing_is_approved() { // final review 5
+    let w = lead_world(json!({})); let id = at_work(&w, 1);
+    sw::store::tasks::set(&id, json!({ "stage": "approval", "mergeFailed": true, "failure": null })).unwrap();
+    let n = calls(&w).len();
+    let e = sw::actions::finish_line::retry_failed(&id).unwrap_err().msg;
+    assert!(e.contains("no longer waits at its failed step"), "{e}");
+    let t = settle(&id);
+    assert_eq!((t.s("stage"), t.b("mergeIntent"), t.b("approvedAt")), ("approval", false, false), "{t:?}");
+    assert!(calls(&w)[n..].iter().all(|c| !c.contains("merge")), "{:?}", &calls(&w)[n..]);
+}

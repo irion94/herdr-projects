@@ -80,9 +80,9 @@ pub fn lead(id: &str, act: &str, words: &str, me: Option<(&Obj, &str)>) -> Res<S
             "one more round, from the Lead"
         }
         ("round", _) => {
-            // The failed step again, nothing re-armed. Only from `failed`: retry at `approval` would be the merge's yes.
-            if get(&id).is_none_or(|c| c.s("stage") != "failed") { crate::fail!("{id} no longer waits at its failed step: nothing was re-run."); }
-            finish_line::retry(&id)?;
+            // The failed step again, nothing re-armed. Only from `failed`, in the same read: retry at `approval` would be
+            // the merge's yes.
+            finish_line::retry_failed(&id)?;
             "one more round, from the Lead"
         }
         _ => { escalate(&id, &key, &class, &line(&words))?; "handed to you" }
