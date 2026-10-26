@@ -99,6 +99,21 @@ fn a_reused_lead_pane_id_with_another_terminal_is_not_the_lead() { // Review Foc
     assert!(sw::flow::pane_owner::whose(vec![t], &w.socket, &lead_pane(&id)).is_none());
 }
 #[test]
+fn a_restart_with_the_leads_pane_id_taken_by_another_agent_starts_a_fresh_lead() { // Review Focus 1, on a restart
+    let w = lead_world(json!({})); let id = at_work(&w, 2); // its second step: still at work once started again
+    let (old, worker) = (task(&id).at("link").at("lead").clone(), task(&id).at("link").t("pane"));
+    // herdr gave the Lead's pane id to another pane (another terminal, another agent in it), and the worker exited.
+    w.patch(|s| for p in s["panes"].as_array_mut().unwrap() {
+        if p.s("pane_id") == old.s("pane") { p["terminal_id"] = json!("term-other"); p["agent"]["name"] = json!("someone-else"); }
+        if p.s("pane_id") == worker { p["agent"] = serde_json::Value::Null; }
+    });
+    sw::actions::talk::tell(&id, "Go on.", false).unwrap();
+    settle(&id);
+    let l = task(&id).at("link").at("lead").clone();
+    assert!(l.b("pane") && l.s("pane") != old.s("pane") && l.s("terminal") != "term-other", "{l}");
+    assert_eq!(calls(&w).iter().filter(|c| regex::Regex::new(r"^agent start \S+-l ").unwrap().is_match(c)).count(), 2);
+}
+#[test]
 fn a_lead_that_cannot_start_leaves_the_task_as_today_and_says_so() {
     let w = lead_world(json!({ "worker.agent": "codex" }));
     w.patch(|s| s["missing"] = json!(["claude"]));

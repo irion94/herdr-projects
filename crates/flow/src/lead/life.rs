@@ -26,8 +26,10 @@ pub fn start_lead(g: &mut Guard, t: Task, api: &Herdr) -> Res<Task> {
     let w = work(Some(&t));
     let who = start::role_of("lead", &|n| w.at(n).clone());
     if who.kind.is_empty() || t.b("attemptOf") || is_chat(&t) { return Ok(t); }
+    // Still running: an agent in its pane, in the terminal it was started in. herdr gives a closed pane's id to the next
+    // pane of its space, so an agent there in another terminal is someone else's, and a fresh Lead starts.
     let l = t.at("link").at("lead");
-    if l.b("pane") && api.agent_get(l.s("pane")).ok().flatten().is_some() { return Ok(t); }
+    if l.b("pane") && api.agent_get(l.s("pane")).ok().flatten().is_some_and(|a| flow::pane_owner::leads_pane(&t, &a.t("terminal_id"))) { return Ok(t); }
     if t.arr("attempts").len() > 1 { return g.set(|t| { t.obj_mut("fallbacks").put("lead", "no Lead: a task done several times at once has none in this release"); }); }
     let mut made: Option<Opened> = None;
     let name = match launch(&t, api, &who, &mut made) {
@@ -35,7 +37,7 @@ pub fn start_lead(g: &mut Guard, t: Task, api: &Herdr) -> Res<Task> {
         Err(e) => {
             if let Some(o) = &made { flow::tabs::close_reviewer_tab(api, &json!({ "tab": o.tab, "pane": o.pane })); }
             let line = format!("no Lead: it could not start ({}); its waits go to you", one_line(&e.msg, 200));
-            return g.set(|t| { t.obj_mut("fallbacks").put("lead", line); });
+            return g.set(|t| { t.obj_mut("fallbacks").put("lead", line); if t.at("link").is_object() { t.obj_mut("link").del("lead"); } }); // never a link to a pane that is not its Lead
         }
     };
     let o = made.unwrap_or(Opened { tab: String::new(), pane: String::new(), terminal: String::new() });
