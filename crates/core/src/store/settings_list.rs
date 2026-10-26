@@ -41,8 +41,8 @@ fn role(name: &str, who: &str, agent: &str, kind: Kind) -> Vec<Entry> {
     let mut agent_doc = format!("{who}'s program: one of {names}, with an optional model after a slash (`codex/gpt-6.1-sol`, `agy/gemini-3-pro`). The model travels with the program, so one program's model is never handed to another; a name the program does not take is refused with the ones it does (`herdr-projects models` lists them, [models](models.md)). A program that cannot do this role, or take a model or an effort, is refused with the reason ([agents](agents.md))");
     if name == "coordinator" { agent_doc.push_str(". `none`: no Coordinator"); }
     if name == "reviewer" { agent_doc.push_str(". Not installed here: the worker's program reviews, on its own model, and the task says so"); }
-    let mut a = e(&format!("{name}.agent"), &format!("{cap} program"), kind, Ty::Agent, json!(agent), &agent_doc);
     if name == "lead" { agent_doc.push_str(". `none`: no Lead. Only `claude` for now: the board starts the Lead with its edits and outward actions denied, and has that deny list for no other program. More: [the Lead](lead.md)"); } // (fork)
+    let mut a = e(&format!("{name}.agent"), &format!("{cap} program"), kind, Ty::Agent, json!(agent), &agent_doc);
     a.none = name == "coordinator" || name == "lead"; // (fork)
     let mut text = e(&format!("{name}.instructions"), &format!("{cap} instructions"), kind, Ty::Text, json!("none"),
         &format!("your own words for {who}, added after the board's own fixed rules{}", match kind { Kind::Work => ". They add up across the places, broadest first, and the agent is told that later ones win", Kind::Coord => ". They add up across the places, broadest first: yours, then this coordinator's own", _ => "" }));

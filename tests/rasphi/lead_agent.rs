@@ -13,6 +13,7 @@ fn lead_settings_are_work_settings_with_upstream_defaults() {
         assert_eq!((e.kind.name(), e.builtin.clone(), e.repo), ("work", v, false), "{n}");
     }
     assert!(entry_of("lead.instructions").unwrap().adds);
+    assert!(entry_of("lead.agent").unwrap().doc.contains("no Lead"));
     assert!(!sw::store::settings_list::repo_facts().iter().any(|n| n.starts_with("lead.")));
 }
 #[test]
