@@ -1,4 +1,5 @@
 //! What `herdr-projects help` prints: every command, in a few words each.
+// (fork): the `lead` line below is the Lead's verb (docs/lead.md)
 pub const HELP: &str = r#"herdr-projects: a work board for herdr
 
   herdr-projects                     open the board here (in herdr: bind a key to the plugin action "open")
