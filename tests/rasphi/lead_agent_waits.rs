@@ -85,6 +85,9 @@ fn plan_ok_from_the_lead_starts_the_build() {                     // acceptance 
     let t = pass(&w, &id);
     assert_eq!((t.at("plan").s("approvedBy"), t.s("stage")), ("lead", "approval"));
     assert_eq!(wakes(&w, &id).len(), 1, "a passed review at approval wakes nobody");
+    let mut b = crate::common::board::open(&w.root, 90); b.s.sel = id.clone(); b.load(); b.press(&["alt+t"]); // final review 4
+    let whole = b.text();
+    assert!(regex::Regex::new(r"Stands\s+approved by the Lead").unwrap().is_match(&whole), "{whole}");
 }
 #[test]
 fn a_lead_round_sends_the_findings_back_once_and_a_second_failure_goes_to_the_human() { // acceptance 6
