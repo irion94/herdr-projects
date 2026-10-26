@@ -163,3 +163,21 @@ fn the_lead_closes_when_its_task_is_stopped() {
     assert!(task(&id).at("link").at("lead").is_null());
     assert!(!w.state().arr("tabs").iter().any(|x| x.s("tab_id") == tab));
 }
+#[test]
+fn a_new_lead_sees_the_wake_its_gone_chat_never_decided() { // final review 6
+    let w = lead_world(json!({})); let id = at_work(&w, 1);
+    ask(&id, "Blue or green?"); pass(&w, &id);
+    let old = lead_pane(&id);
+    assert_eq!(wakes(&w, &id).len(), 1); assert!(sw::lead::wake::deciding(&task(&id)));
+    w.patch(|s| for p in s["panes"].as_array_mut().unwrap() { if p.s("pane_id") == old { p["agent"] = serde_json::Value::Null; } }); // the Lead's program ended
+    let t = task(&id);
+    sw::lead::life::start_lead(&mut sw::runner::Guard::free(&id), t.clone(), &sw::flow::task::h(&t)).unwrap();
+    let t = task(&id);
+    assert_ne!(lead_pane(&id), old, "a new Lead, in a new chat");
+    assert!(t.at("lead").at("wake").is_null() && t.at("lead").at("lastKey").is_null(), "{}", t.at("lead"));
+    let t = pass(&w, &id);
+    let woke = wakes(&w, &id);
+    assert_eq!(woke.len(), 1, "the new Lead is woken for the question: {:?}", prompts(&w, &lead_pane(&id)));
+    assert!(woke[0].starts_with(&format!("Lead woke: question on {id}.")));
+    assert_eq!((t.s("stage"), sw::lead::wake::deciding(&t)), ("asks", true));
+}

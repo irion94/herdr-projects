@@ -21,7 +21,8 @@ herdr-projects delegate 12 --lead.agent claude --lead.tries 3          # or for 
   set them, as the reviewer's do).
 - It runs in a folder of its own, `lead` in the task's folder on the board, and reads the worktree by its path.
 - It closes when the task is done, archived, or stopped by you, but not when it stops at a limit. It starts again on the
-  next `delegate` or board restart, with a new chat; its counters stay on the task.
+  next `delegate` or board restart, with a new chat; its counters stay on the task. A wake the old chat had not decided
+  is woken again in the new one.
 - No Lead for a chat-only task, or for a task done several times at once ([attempts](attempts.md)); the task says so
   in its fallbacks. A Lead that cannot start leaves the task as it was (its waits go to you) and the task says why.
 - The Lead is never the planner. The planner keeps its own tab.

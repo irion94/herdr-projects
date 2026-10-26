@@ -45,6 +45,8 @@ pub fn start_lead(g: &mut Guard, t: Task, api: &Herdr) -> Res<Task> {
     let t = g.set(|t| {
         t.obj_mut("link").put("lead", json!({ "pane": o.pane, "tab": o.tab, "terminal": o.terminal, "agent": name, "kind": who.kind }));
         let l = t.obj_mut("lead"); l.put("startedAt", now()); l.put("unsent", first);
+        // A wake the old chat never decided is a new chat's to see: its wait wakes the new Lead (lead/pass.rs).
+        if l.at("wake").is_object() { let k = l.at("wake").t("key"); l.del("wake"); if l.s("lastKey") == k { l.del("lastKey"); } }
         t.obj_mut("fallbacks").del("lead");
     })?;
     hand_unsent(&t);
