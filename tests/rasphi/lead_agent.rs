@@ -31,6 +31,12 @@ fn the_deny_list_is_claudes_alone() {
     assert!(sw::agents::fence::lead_fence("codex").is_none());
 }
 #[test]
+fn the_deny_list_has_the_commands_that_skip_the_guard() {
+    let d = sw::agents::fence::CLAUDE_LEAD_DENY;
+    assert_eq!(d.len(), 12);
+    for p in ["run", "install", "update", "approve-current"] { assert!(d.contains(&format!("Bash(herdr-projects {p}*)").as_str()), "{p}"); }
+}
+#[test]
 fn lead_none_is_upstream() {
     let w = world();
     let id = to_approval(&w, "Plain");
