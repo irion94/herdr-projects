@@ -171,8 +171,8 @@ pub fn cut_world(waits: &str, settings: Value) -> World {
     w.patch(|s| s["pids"] = json!(true));
     w
 }
-/// The working agents started, by program, in order (not the reviewers).
-pub fn starts(w: &World) -> Vec<String> { w.state().arr("calls").iter().map(text).filter(|c| c.starts_with("agent start") && !regex::Regex::new(r"^agent start \S+-r ").unwrap().is_match(c)).map(|c| c.split(' ').nth(4).unwrap_or("").to_string()).collect() }
+/// The working agents started, by program, in order (not the reviewers, nor the Lead: fork).
+pub fn starts(w: &World) -> Vec<String> { w.state().arr("calls").iter().map(text).filter(|c| c.starts_with("agent start") && !regex::Regex::new(r"^agent start \S+-[rl] ").unwrap().is_match(c)).map(|c| c.split(' ').nth(4).unwrap_or("").to_string()).collect() }
 /// Every call gh was asked, one per line.
 pub fn gh_log(w: &World) -> String { w.gh.log.borrow().iter().map(|l| format!("{l}\n")).collect() }
 pub fn calls(w: &World) -> Vec<String> { w.state().arr("calls").iter().map(text).collect() }

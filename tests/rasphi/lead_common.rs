@@ -19,7 +19,7 @@ pub fn lead_world(settings: Value) -> World {
     w
 }
 /// The pane of the task's Lead ("" when it has none).
-pub fn lead_pane(id: &str) -> String { task(id).at("link").s("lead").to_string() }
+pub fn lead_pane(id: &str) -> String { task(id).at("link").at("lead").t("pane") }
 /// The prompts the Lead was given that start with `Lead woke:`.
 pub fn wakes(w: &World, id: &str) -> Vec<String> { prompts(w, &lead_pane(id)).into_iter().filter(|p| p.starts_with("Lead woke:")).collect() }
 /// One pass of the board's own timer for the task: settle, the housekeeping, settle.
@@ -37,5 +37,6 @@ pub fn at_work(w: &World, steps: usize) -> String {
     w.script(json!({ "worker": (0..steps).map(|_| json!({ "status": "working" })).collect::<Vec<_>>() }));
     let id = w.add("At work");
     delegate(&id);
+    settle(&id);
     id
 }

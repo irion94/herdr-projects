@@ -1,8 +1,9 @@
 //! A task's tabs in its herdr space: the agent's tab is named `Agent`, and each reviewer has a tab of its own, named
 //! after its review round. A task done several times at once has a tab per attempt: `Agent A`, `Agent B`. Once an
 //! agent took over from another, its tab names the one that is on it now: `Agent (codex)`, `Reviewer #2 (claude)`. A
-//! planner of its own (`plan.agent`) has the tab `Planner`. Checked on herdr 0.9.3: `tab create --no-focus` leaves the
-//! focus where it is; closing a tab's last pane closes the tab; a tab's id is not given out again.
+//! planner of its own (`plan.agent`) has the tab `Planner`; the task's Lead (`lead.agent`, fork) has the tab `Lead`.
+//! Checked on herdr 0.9.3: `tab create --no-focus` leaves the focus where it is; closing a tab's last pane closes the
+//! tab; a tab's id is not given out again.
 use crate::err::Res;
 use crate::herdr::Herdr;
 use crate::json::*;
@@ -12,6 +13,8 @@ pub const AGENT_TAB: &str = "Agent";
 pub fn reviewer_tab(round: i64, by: &str) -> String { format!("Reviewer #{round}{}", if by.is_empty() { String::new() } else { format!(" ({by})") }) }
 pub const PLANNER_TAB: &str = "Planner";
 pub const PLAN_REVIEW_TAB: &str = "Plan review";
+/// The tab of the task's Lead (fork).
+pub const LEAD_TAB: &str = "Lead";
 /// The tab of the reviewer that compares a task's attempts.
 pub const PICKER_TAB: &str = "Picker";
 /// A name is a convenience, as an agent's is: a herdr that will not rename a tab does not stop the task.

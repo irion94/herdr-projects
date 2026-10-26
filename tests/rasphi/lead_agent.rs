@@ -47,3 +47,86 @@ fn the_lead_world_has_a_claude_lead_and_no_pane_yet() {
     assert_eq!(sw::store::settings::lookup::setting_text("lead.agent", None), "claude");
     assert!(wakes(&w, &id).is_empty());
 }
+#[test]
+fn the_lead_starts_in_its_own_tab_with_the_deny_list() { // acceptance 8
+    let w = lead_world(json!({ "worker.agent": "codex" }));
+    unsafe { std::env::remove_var("HERDR_PROJECTS_NO_HOOK") } // the Lead's hook file is what is looked at; the next world sets it again
+    let id = at_work(&w, 1);
+    let t = task(&id);
+    let lead = t.at("link").at("lead");
+    assert_eq!(lead.s("kind"), "claude");
+    assert!(lead.s("agent").ends_with("-l"), "{lead}");
+    assert!(w.state().arr("tabs").iter().any(|x| x.s("label") == "Lead" && x.s("tab_id") == lead.s("tab")));
+    let start = calls(&w).into_iter().find(|c| c.starts_with(&format!("agent start {} ", lead.s("agent")))).unwrap();
+    for d in sw::agents::fence::CLAUDE_LEAD_DENY { assert!(start.contains(d), "{d}: {start}"); }
+    assert!(start.contains("--disallowedTools"));
+    let p = w.state().arr("panes").iter().find(|p| p.s("pane_id") == lead.s("pane")).cloned().unwrap();
+    assert_eq!(p.s("cwd"), sw::store::files::dir_of(&id).join("lead").display().to_string());
+    let first = prompts(&w, lead.s("pane")).first().cloned().unwrap();
+    assert!(first.starts_with(&format!("Work board task {id}, role: lead.")), "{first}");
+    assert!(first.find(sw::lead::brief::LEAD_RULES).unwrap() < first.len());
+    assert!(t.at("lead").at("unsent").is_null(), "the first prompt went in: {}", t.at("lead"));
+    let hook = sw::store::files::read_json(&sw::store::files::dir_of(&id).join("hook-lead.json")).unwrap();
+    assert!(hook.at("permissions").is_null(), "no extra writable dirs for the Lead: {hook}");
+}
+#[test]
+fn the_leads_token_does_not_overwrite_the_agents_and_its_turn_ends_are_recorded() { // acceptance 8, trap 4.5
+    let w = lead_world(json!({ "worker.agent": "codex" }));
+    let id = at_work(&w, 1);
+    let tokens = sw::store::files::read_json(&sw::store::files::dir_of(&id).join("tokens.json")).unwrap();
+    let (a, l) = (tokens.t("agent"), tokens.t("lead"));
+    assert!(!a.is_empty() && !l.is_empty() && a != l);
+    assert!(sw::store::marks::token_ok(&id, "agent", &a, 0) && sw::store::marks::token_ok(&id, "lead", &l, 0) && !sw::store::marks::token_ok(&id, "agent", &l, 0));
+    sw::turn::turn_ended(&id, "lead", &l, 0, &[json!({ "session_id": "s" }).to_string()]);
+    assert_eq!(task(&id).at("lead").i("turns"), 1);
+}
+#[test]
+fn a_lead_turn_end_starts_no_finish_runner_and_adds_no_event() { // Review Focus 4
+    let w = lead_world(json!({})); let id = at_work(&w, 1);
+    let before = task(&id).i("eventSeq");
+    let l = sw::store::files::read_json(&sw::store::files::dir_of(&id).join("tokens.json")).unwrap().t("lead");
+    sw::turn::turn_ended(&id, "lead", &l, 0, &["{}".into()]);
+    let t = task(&id);
+    assert_eq!((t.i("eventSeq"), t.s("stage")), (before, "working"));
+    assert!(sw::runner::JOBS.with(|j| j.borrow().is_empty()));
+}
+#[test]
+fn a_reused_lead_pane_id_with_another_terminal_is_not_the_lead() { // Review Focus 1
+    let w = lead_world(json!({})); let id = at_work(&w, 1);
+    let mut t = task(&id);
+    assert_eq!(sw::flow::pane_owner::whose(vec![t.clone()], &w.socket, &lead_pane(&id)).map(|x| x.1), Some("lead"));
+    t.obj_mut("link").obj_mut("lead").put("terminal", "term-other");
+    assert!(sw::flow::pane_owner::whose(vec![t], &w.socket, &lead_pane(&id)).is_none());
+}
+#[test]
+fn a_lead_that_cannot_start_leaves_the_task_as_today_and_says_so() {
+    let w = lead_world(json!({ "worker.agent": "codex" }));
+    w.patch(|s| s["missing"] = json!(["claude"]));
+    let id = at_work(&w, 1);
+    let t = task(&id);
+    assert_eq!(t.s("stage"), "working");
+    assert!(t.at("link").at("lead").is_null() && t.at("fallbacks").s("lead").starts_with("no Lead:"), "{}", t.at("fallbacks"));
+    assert!(!w.state().arr("tabs").iter().any(|x| x.s("label") == "Lead"), "its tab is not left behind");
+}
+#[test]
+fn the_lead_closes_with_its_task() {
+    // Archived: a task waiting for approval (one still at work cannot be archived).
+    let w = lead_world(json!({}));
+    let id = to_approval(&w, "Closes");
+    let tab = task(&id).at("link").at("lead").t("tab");
+    assert!(!tab.is_empty());
+    sw::actions::archive::archive(&id).unwrap();
+    pass(&w, &id);
+    assert!(task(&id).at("link").at("lead").is_null());
+    assert!(!w.state().arr("tabs").iter().any(|x| x.s("tab_id") == tab));
+}
+#[test]
+fn the_lead_closes_when_its_task_is_stopped() {
+    let w = lead_world(json!({}));
+    let id = at_work(&w, 1);
+    let tab = task(&id).at("link").at("lead").t("tab");
+    sw::actions::talk::stop(&id).unwrap();
+    pass(&w, &id);
+    assert!(task(&id).at("link").at("lead").is_null());
+    assert!(!w.state().arr("tabs").iter().any(|x| x.s("tab_id") == tab));
+}

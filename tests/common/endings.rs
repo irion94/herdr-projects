@@ -81,10 +81,10 @@ pub fn helper_ends(f: &F, pi: usize, running: bool) {
 fn report(first: &str, says: Value) {
     let Some(c) = regex::Regex::new(r"^Work board task (\S+), role: (\w+)(?:, round (\d+))?\.").unwrap().captures(first) else { return };
     let task = c[1].to_string();
-    let role = if &c[2] == "reviewer" { "reviewer" } else { "agent" };
+    let role = match &c[2] { "reviewer" => "reviewer", "lead" => "lead", _ => "agent" }; // (fork) lead
     let round: i64 = c.get(3).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
     let mut dir = sw::store::files::data_dir().join("tasks"); for part in task.split('/') { dir.push(part); }
     let tokens: Value = std::fs::read_to_string(dir.join("tokens.json")).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or(Value::Null);
-    let token = if role == "reviewer" { tokens.at("reviewer").t(&round.to_string()) } else { tokens.t("agent") };
+    let token = match role { "reviewer" => tokens.at("reviewer").t(&round.to_string()), "lead" => tokens.t("lead"), _ => tokens.t("agent") };
     sw::turn::turn_ended(&task, role, &token, round, &[says.to_string()]);
 }

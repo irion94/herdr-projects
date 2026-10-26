@@ -1,6 +1,6 @@
 //! Whose agent runs in a herdr pane: herdr hands a closed pane's id to the next pane opened in its space, so a task's
-//! saved pane id names its agent (or its reviewer) only while the terminal in that pane is one it was seen in. A done
-//! task's old pane id given to a coordinator is the coordinator's, not the task's.
+//! saved pane id names its agent (or its reviewer, or its Lead: fork) only while the terminal in that pane is one it
+//! was seen in. A done task's old pane id given to a coordinator is the coordinator's, not the task's.
 use super::live::{owns_pane, terminals};
 use crate::herdr::Herdr;
 use crate::json::*;
@@ -26,7 +26,14 @@ pub fn reviewers_pane(t: &Task, term: &str) -> bool {
     if !term.is_empty() && r.b("terminal") { return r.s("terminal") == term; }
     !ended(t)
 }
-/// The task among `tasks` whose agent or reviewer runs in pane `pane` of herdr session `socket` now, and as which.
+/// (fork) The same for its Lead: the terminal saved with `link.lead`. A Lead's pane counts only while its task has not
+/// ended (lead/life.rs) or in the terminal it was started in.
+pub fn leads_pane(t: &Task, term: &str) -> bool {
+    let l = t.at("link").at("lead");
+    if !term.is_empty() && l.b("terminal") { return l.s("terminal") == term; }
+    !crate::lead::life::ended(t)
+}
+/// The task among `tasks` whose agent, reviewer or Lead runs in pane `pane` of herdr session `socket` now, and as which.
 /// herdr is asked for the pane's terminal once, and only when a task names the pane.
 pub fn whose(tasks: impl IntoIterator<Item = Task>, socket: &str, pane: &str) -> Option<(Task, &'static str)> {
     if pane.is_empty() { return None; }
@@ -37,6 +44,7 @@ pub fn whose(tasks: impl IntoIterator<Item = Task>, socket: &str, pane: &str) ->
         if l.s("socket") != socket { continue; }
         if l.s("pane") == pane && agents_pane(&t, &now()) { return Some((t, "agent")); }
         if l.at("reviewer").s("pane") == pane && reviewers_pane(&t, &now()) { return Some((t, "reviewer")); }
+        if l.at("lead").s("pane") == pane && leads_pane(&t, &now()) { return Some((t, "lead")); } // (fork)
     }
     None
 }
