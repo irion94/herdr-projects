@@ -24,6 +24,15 @@ fn a_lead_agent_other_than_claude_is_refused() {
     ok(&["set", "lead.agent", "claude/claude-opus-5-5"]);
 }
 #[test]
+fn lead_access_ask_is_refused_with_the_reason() { // final review 7
+    let w = lead_world(json!({})); in_pane(&w, "");
+    let e = refused(&["set", "lead.access", "ask"]);
+    assert!(e.contains("lead.access") && e.contains("the Lead cannot work under \"ask\"") && e.contains("nobody answers its permission dialogs"), "{e}");
+    ok(&["set", "lead.access", "auto"]); ok(&["set", "lead.access", "full"]);
+    ok(&["set", "worker.access", "ask"]); // another role keeps its `ask`
+    assert!(sw::agents::roles::why_not_access("reviewer", "ask").is_none());
+}
+#[test]
 fn the_deny_list_is_claudes_alone() {
     let f = sw::agents::fence::lead_fence("claude").unwrap();
     assert_eq!(f[0], "--disallowedTools");

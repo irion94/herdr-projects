@@ -28,6 +28,11 @@ pub fn why_not(k: &str, role: &str, model: bool) -> Option<String> {
     if model && a.model.is_empty() { return Some(format!("{k} takes no model when the board starts it: leave the model out and choose it in {k}'s own settings.")); }
     None
 }
+/// (fork) Why a role cannot work under this access, whatever its program, or None. The Lead under `ask` would stop at its
+/// first command with nobody to answer, and the board would type its wakes into that permission dialog.
+pub fn why_not_access(role: &str, access: &str) -> Option<String> {
+    (role == "lead" && access == "ask").then(|| "the Lead cannot work under \"ask\": nobody answers its permission dialogs, and the board's wakes would be typed into one. Keep lead.access at full or auto.".to_string())
+}
 /// The same, as a whole refusal of a setting's value, naming who can do it instead.
 pub fn refusal(name: &str, k: &str, model: bool) -> Option<String> {
     let role = role_of_setting(name);

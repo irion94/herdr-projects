@@ -65,8 +65,8 @@ Bash(*herdr-projects keeper*)
 
 `git * commit*` and `git * push*` catch `git -C <worktree> commit|push`. `herdr *` keeps the Lead off herdr's own
 program, which could answer the working agent's permission dialog. The last six are the board's early commands, by any
-path. `lead.access` is `full` by default, inside this fence, because `ask` would stop the Lead at its first command with
-nobody to answer.
+path. `lead.access` is `full` by default, inside this fence. `ask` is refused: it would stop the Lead at its first command
+with nobody to answer, and the board's wakes would then be typed into that permission dialog. `auto` is allowed.
 
 ## What wakes it
 
