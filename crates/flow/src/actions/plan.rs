@@ -18,14 +18,16 @@ pub fn approvable(t: &Task) -> bool {
     awaits_plan(t) || (t.s("stage") == "failed" && plan::open(t) && t.at("failure").s("stage") == "plan" && !plan::read_plan(t).is_empty() && !sent_back)
 }
 /// Yes: the plan is approved as it stands, and the build starts (plan/build.rs, in a runner: a program is started).
-pub fn approve_plan(id: &str) -> Res<Said> {
+pub fn approve_plan(id: &str) -> Res<Said> { approve_plan_by(id, "you") }
+/// (fork) The same yes, given by `by`: "you", or the task's Lead (lead/verb.rs).
+pub fn approve_plan_by(id: &str, by: &str) -> Res<Said> {
     let cur = find(id)?;
     assert_unarchived(&cur)?;
     flow::live::assert_live(&cur)?;
     let t = update(cur.s("id"), |t| {
         if !approvable(t) { crate::fail!("{} has no plan that waits for a yes.", t.s("id")); }
         if runner_alive(t) { crate::fail!("{} is busy. Try again in a moment.", t.s("id")); }
-        let p = t.obj_mut("plan"); p.put("approvedAt", now()); p.put("approvedBy", "you");
+        let p = t.obj_mut("plan"); p.put("approvedAt", now()); p.put("approvedBy", by);
         t.put("stage", "starting"); t.put("msg", "Starting the build"); t.del("kind"); t.put("since", now()); t.put("failure", Value::Null);
         Ok(Change::Write)
     })?;

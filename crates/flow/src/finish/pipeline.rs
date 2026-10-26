@@ -118,7 +118,8 @@ pub fn pipeline(id: &str, g: &mut Guard, text: &str, keep_intent: bool, reason: 
             let merged = if kept.is_some() { " The branch was only re-merged with main since its review passed, so the tests ran instead of a new review." } else { "" };
             let fails = get(id).map(|c| c.i("checkFails")).unwrap_or(0) + 1;
             let rounds = ch.i("review.rounds");
-            let last = fails > rounds; // it goes back by itself `review.rounds` times
+            // it goes back by itself `review.rounds` times, and once more for each round the Lead asked for
+            let cap = rounds + get(id).map(|c| crate::lead::counts::lead_rounds(&c, "check")).unwrap_or(0); let last = fails > cap; // (fork)
             let auth = is_auth_failure(&r.out);
             let tail = r.out.lines().filter(|l| !l.is_empty()).last().unwrap_or("").to_string();
             let mut f = failure("check", &format!("Check failed{}", if last && fails > 1 { format!(" after {fails} tries") } else { String::new() }), &format!("Command: {ran}\nFolder: {}\n\n{}", folder.display(), r.out), "Fix the failed check, run it again and finish for a fresh review.");

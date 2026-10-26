@@ -91,7 +91,7 @@ pub fn after_review(c: Ctx, g: &mut Guard) -> Res<()> {
     t = g.set(|t| { t.put("failure", Value::Null); if t.at("mergeIntent").b("auto") && !by_itself(t) { t.put("mergeIntent", Value::Null); } })?;
     // The loop: a review that fails the gate goes straight back, at most `review.rounds` times (0: never).
     let rounds = t.i("reviewRounds");
-    let max = ch.i("review.rounds");
+    let base = ch.i("review.rounds"); let max = base + crate::lead::counts::lead_rounds(&t, "review"); // (fork) the Lead's rounds
     let passed = review.as_ref().map(gate::passes).unwrap_or(true);
     let fresh = review.as_ref().map(|r| !r.b("keptAt")).unwrap_or(false);
     // The task's tokens, the reviewer's now among them. At the limit the task stops here, under "needs you".
@@ -122,7 +122,7 @@ pub fn after_review(c: Ctx, g: &mut Guard) -> Res<()> {
         return Ok(());
     } }
     // Still failing after the last round: the next agent on `worker.fallback` takes over, with the open findings.
-    if let Some(rv) = &review { if fresh && !passed && max > 0 && !t.b("mergeIntent") {
+    if let Some(rv) = &review { if fresh && !passed && base > 0 && !t.b("mergeIntent") { // (fork) base: the Lead's rounds hand over to nobody
         let mut stale = rv.as_object().cloned().unwrap_or_default(); stale.put("stale", true);
         g.set(|t| t.put("review", stale.clone()))?;
         if hand_over(id, g, &format!("its work still failed review after {rounds} round{}", if rounds == 1 { "" } else { "s" }), "")? { return Ok(()); }
