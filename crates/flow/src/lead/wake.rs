@@ -2,10 +2,15 @@
 //! stands, plus `lead.quiet`; each wait has a key so it fires once. While a wake is open, or a wait it may decide has
 //! not reached it yet, the wait is held: the board says `lead decides` and the human is not told (notify.rs).
 use crate::chat_only::is_chat;
+use crate::clock::now;
 use crate::json::*;
+use crate::store::settings::{lookup::setting_text, values::ms};
 
 /// The classes of wait, in the order of spec 4.3.
 pub const CLASSES: [&str; 6] = ["question", "plan", "review", "check", "finish", "quiet"];
+/// How long a wait the Lead may decide is held before its wake is written (by the Lead's pass of a live herdr session):
+/// past it, the human is told as upstream tells them, so a wait no pass reaches is never hidden for good.
+pub const GRACE_MS: i64 = 120_000;
 /// A wait that wakes the Lead: its class and its key (one wake per key).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Wait { pub class: &'static str, pub key: String }
@@ -35,13 +40,17 @@ pub fn wait_of(t: &Obj, now: i64, quiet_ms: i64) -> Option<Wait> {
 pub fn key_of(class: &str, t: &Obj) -> String { format!("{class}@{}", t.i("armedAt")) }
 /// A wake is open: the Lead was woken and has not acted, escalated or timed out.
 pub fn deciding(t: &Obj) -> bool { t.at("lead").at("wake").is_object() }
-/// The human's notice waits: a wake is open, or a wait the Lead may decide has not been through it yet. A wait it was
-/// woken for, that was escalated or that it acted on is not held.
+/// The human's notice waits: a wake is open and within `lead.timeout`, or a wait the Lead may decide has not been
+/// through it yet and came less than `GRACE_MS` ago (`at`: when the task reached that stage). A wait it was woken for,
+/// that was escalated or that it acted on is not held. Each hold ends by itself, whether or not a pass comes.
 pub fn held(t: &Obj) -> bool {
     if !on(t) { return false; } // an ended task's Lead is closed: a wake left open on it holds nothing
-    if deciding(t) { return true; }
-    class_of(t).map(|c| t.at("lead").s("lastKey") != key_of(c, t)).unwrap_or(false)
+    let n = now();
+    if deciding(t) { return n - t.at("lead").at("wake").i("at") < timeout_ms(t); }
+    class_of(t).map(|c| t.at("lead").s("lastKey") != key_of(c, t) && n - t.i("at") < GRACE_MS).unwrap_or(false)
 }
+/// `lead.timeout` in milliseconds.
+pub fn timeout_ms(t: &Obj) -> i64 { ms(&setting_text("lead.timeout", Some(t))) }
 /// The class the Lead decides now: the open wake's, or the wait's.
 pub fn class_now(t: &Obj) -> String {
     let w = t.at("lead").at("wake");

@@ -99,6 +99,17 @@ fn a_reused_lead_pane_id_with_another_terminal_is_not_the_lead() { // Review Foc
     assert!(sw::flow::pane_owner::whose(vec![t], &w.socket, &lead_pane(&id)).is_none());
 }
 #[test]
+fn an_unsent_lead_prompt_never_goes_to_a_reused_lead_pane() { // Review Focus 1, on the housekeeping (fix round 1)
+    let w = lead_world(json!({})); let id = at_work(&w, 2);
+    let pane = lead_pane(&id);
+    sw::store::tasks::patch(&id, |t| { t.obj_mut("lead").put("unsent", "The task's first prompt."); }).unwrap();
+    w.patch(|s| for p in s["panes"].as_array_mut().unwrap() { if p.s("pane_id") == pane { p["terminal_id"] = json!("term-other"); p["agent"]["name"] = json!("someone-else"); } });
+    let before = prompts(&w, &pane).len();
+    pass(&w, &id);
+    assert_eq!(prompts(&w, &pane).len(), before, "{:?}", prompts(&w, &pane).last());
+    assert_eq!(task(&id).at("lead").s("unsent"), "The task's first prompt.");
+}
+#[test]
 fn a_restart_with_the_leads_pane_id_taken_by_another_agent_starts_a_fresh_lead() { // Review Focus 1, on a restart
     let w = lead_world(json!({})); let id = at_work(&w, 2); // its second step: still at work once started again
     let (old, worker) = (task(&id).at("link").at("lead").clone(), task(&id).at("link").t("pane"));
