@@ -143,8 +143,10 @@ The board hands a wait over by itself in these cases, each with its line first:
 And two more:
 
 - A review, check or finish wait that comes right after the Lead's own `round` for that class goes to you at once:
-  `Lead: its extra round did not fix the <class>`. Once you have handled it, a later wait of that class can wake the
-  Lead again, while tries are left.
+  `Lead: its extra round did not fix the <class>`. A step of the finish line that fails again in the same turn is such
+  a wait too: a check or finish wait is told apart by its failure as well as by the turn. Only the next wait of that
+  class counts: once it has gone to you, once the task is at approval past that class (the round fixed it), or once you
+  have said your word (`tell`, a retry, a fix), a later wait of that class wakes the Lead again, while tries are left.
 - A Lead whose agent is not in its pane when the wake is due (it ended, or herdr gave its pane to another program) cannot
   decide: `Lead: is not running`.
 

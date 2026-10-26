@@ -36,8 +36,12 @@ pub fn wait_of(t: &Obj, now: i64, quiet_ms: i64) -> Option<Wait> {
     if let Some(c) = class_of(t) { return Some(Wait { class: c, key: key_of(c, t) }); }
     (on(t) && !t.b("attemptOf") && quiet_ms > 0 && t.s("stage") == "working" && now - t.i("armedAt") >= quiet_ms).then(|| Wait { class: "quiet", key: key_of("quiet", t) })
 }
-/// One key per wait: its class and the turn it came in (a new turn of the agent is a new wait).
-pub fn key_of(class: &str, t: &Obj) -> String { format!("{class}@{}", t.i("armedAt")) }
+/// One key per wait: its class and the turn it came in (a new turn of the agent is a new wait). A failed check or finish
+/// step also names its failure: the finish line runs a step again in the same turn, and a second failure is a new wait.
+pub fn key_of(class: &str, t: &Obj) -> String {
+    if ["check", "finish"].contains(&class) { return format!("{class}@{}:{}", t.i("armedAt"), t.at("failure").i("at")); }
+    format!("{class}@{}", t.i("armedAt"))
+}
 /// A wake is open: the Lead was woken and has not acted, escalated or timed out.
 pub fn deciding(t: &Obj) -> bool { t.at("lead").at("wake").is_object() }
 /// The human's notice waits: a wake is open and within `lead.timeout`, or a wait the Lead may decide has not been

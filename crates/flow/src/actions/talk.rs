@@ -106,7 +106,7 @@ pub fn rearm(t: &mut Task, keep_intent: bool, live: bool, chat: bool) -> Res<()>
     if !keep_intent { if t.b("mergeIntent") || t.s("stage") == "approval" { t.put("requireApproval", true); } t.put("mergeIntent", Value::Null); }
     if t.at("review").is_object() && !t.at("review").b("stale") { t.obj_mut("review").put("stale", true); }
     for k in ["checkFails", "reviewRounds", "prRounds", "syncRepairs"] { t.put(k, 0); }
-    t.del("leadRounds"); // (fork) your word ends the Lead's extra pass: a Lead round is exactly one more pass
+    t.del("leadRounds"); if t.at("lead").is_object() { t.obj_mut("lead").del("roundKey"); } // (fork) your word ends the Lead's extra pass: a Lead round is exactly one more pass
     let app = if t.b("agent") { t.at("agent").clone() } else { t.at("app").clone() };
     t.put("stage", "working"); t.put("msg", ""); t.del("kind"); t.put("watch", Value::Null); t.put("app", app); t.put("since", now()); t.put("mergeFailed", false);
     Ok(())

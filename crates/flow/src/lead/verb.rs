@@ -49,7 +49,7 @@ pub fn lead(id: &str, act: &str, words: &str, me: Option<(&Obj, &str)>) -> Res<S
         if act == "escalate" && c == "quiet" { crate::fail!("{QUIET_ESCALATE}"); }
         if !fits(act, &c) { crate::fail!("{act} does not fit the {c} wait on {id}: the Lead may {} there.", fitting(&id, &c)); }
         if act != "plan-ok" && words.is_empty() { crate::fail!("lead {id} {act} needs the words: herdr-projects lead {id} {act} <text>."); }
-        acted(t, &c, act);
+        acted(t, &c, act, wake.s("key"));
         if act == "round" && c == "finish" { t.obj_mut("lead").put("note", words.as_str()); }
         (class, key) = (c, wake.t("key"));
         Ok(Change::Write)
